@@ -1,17 +1,21 @@
 /**
  * Represents a user in the chat application
  */
+const SecurityUtils = require('../utils/SecurityUtils');
+
 class User {
     /**
      * Creates a new user
      * @param {string} id - Unique identifier (socket ID)
      * @param {string} username - Display name
+     * @param {string} ip - User's IP address (for rate limiting)
      */
-    constructor(id, username) {
+    constructor(id, username, ip) {
       this.id = id;
       this.username = this.sanitizeUsername(username);
       this.joinedAt = Date.now();
       this.lastActivity = Date.now();
+      this.ip = ip; // Store IP for rate limiting
     }
     
     /**
@@ -20,8 +24,8 @@ class User {
      * @returns {string} Sanitized username
      */
     sanitizeUsername(username) {
-      // Trim and limit length
-      let sanitized = (username || '').trim().slice(0, 20);
+      // Use security utility for consistent sanitization
+      let sanitized = SecurityUtils.sanitizeText(username, SecurityUtils.SIZE_LIMITS.USERNAME);
       
       // If empty after sanitization, provide a fallback
       if (!sanitized) {
@@ -48,6 +52,6 @@ class User {
         joinedAt: this.joinedAt
       };
     }
-  }
+}
   
-  module.exports = User;
+module.exports = User;
