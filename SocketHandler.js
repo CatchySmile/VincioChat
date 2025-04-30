@@ -1,6 +1,8 @@
 /**
  * Handles all Socket.IO events and communication
  */
+const SecurityUtils = require('../utils/SecurityUtils');
+
 class SocketHandler {
   /**
    * Creates a new SocketHandler
@@ -15,6 +17,21 @@ class SocketHandler {
     
     // Track user details by socket ID
     this.userSockets = new Map();
+    
+    // Track IP addresses for rate limiting
+    this.ipConnections = new Map();
+  }
+  
+  /**
+   * Gets client IP address from socket handshake
+   * @param {Object} socket - Socket.IO socket
+   * @returns {string} Client IP address
+   */
+  getClientIp(socket) {
+    // Get IP address from socket handshake
+    return socket.handshake.headers['x-forwarded-for'] || 
+           socket.handshake.address || 
+           'unknown';
   }
   
   /**
@@ -22,13 +39,24 @@ class SocketHandler {
    */
   initialize() {
     this.io.on('connection', (socket) => {
-      this.logger.info(`New client connected: ${socket.id}`);
+      const clientIp = this.getClientIp(socket);
+      
+      // Check connection rate limit
+      if (SecurityUtils.isRateLimited(clientIp, 'connections')) {
+        this.logger.warn(`Rate limit exceeded for connections from IP: ${clientIp}`);
+        socket.emit('error', 'Too many connection attempts. Please try again later.');
+        socket.disconnect(true);
+        return;
+      }
+      
+      this.logger.info(`New client connected: ${socket.id} from ${clientIp}`);
       
       // Track this socket
       this.userSockets.set(socket.id, {
         id: socket.id,
         roomCode: null,
-        username: null
+        username: null,
+        ip: clientIp
       });
       
       // Set up event handlers for this socket
@@ -72,19 +100,29 @@ class SocketHandler {
    */
   handleCreateRoom(socket, username) {
     try {
-      // Validate username
-      if (!username || typeof username !== 'string' || username.trim() === '') {
-        return socket.emit('error', 'Invalid username');
+      const clientIp = this.getClientIp(socket);
+      
+      // Check room creation rate limit
+      if (SecurityUtils.isRateLimited(clientIp, 'rooms')) {
+        this.logger.warn(`Rate limit exceeded for room creation from IP: ${clientIp}`);
+        socket.emit('error', 'You are creating rooms too quickly. Please try again later.');
+        return;
       }
       
-      // Create the room
-      const room = this.roomManager.createRoom(socket.id, username);
+      // Validate username
+      if (!SecurityUtils.isValidUsername(username)) {
+        return socket.emit('error', 'Invalid username. Username must be between 1-20 characters.');
+      }
+      
+      // Create the room with client IP for the user
+      const room = this.roomManager.createRoom(socket.id, username, clientIp);
       
       // Update user tracking
       this.userSockets.set(socket.id, {
         id: socket.id,
         roomCode: room.code,
-        username: username
+        username: username,
+        ip: clientIp
       });
       
       // Join the socket to the room
@@ -93,7 +131,8 @@ class SocketHandler {
       // Send room data back to the client
       socket.emit('roomCreated', {
         roomCode: room.code,
-        users: Array.from(room.users.values()).map(u => u.username)
+        users: Array.from(room.users.values()).map(u => u.toJSON().username),
+        messageSizeLimit: SecurityUtils.SIZE_LIMITS.MESSAGE
       });
       
       this.logger.info(`Room created: ${room.code} by ${username} (${socket.id})`);
@@ -111,14 +150,23 @@ class SocketHandler {
   handleJoinRoom(socket, data) {
     try {
       const { roomCode, username } = data;
+      const clientIp = this.getClientIp(socket);
       
       // Validate inputs
       if (!roomCode || !username) {
         return socket.emit('error', 'Room code and username are required');
       }
       
+      if (!SecurityUtils.isValidRoomCode(roomCode)) {
+        return socket.emit('error', 'Invalid room code format');
+      }
+      
+      if (!SecurityUtils.isValidUsername(username)) {
+        return socket.emit('error', 'Invalid username. Username must be between 1-20 characters.');
+      }
+      
       // Try to join the room
-      const room = this.roomManager.joinRoom(roomCode, socket.id, username);
+      const room = this.roomManager.joinRoom(roomCode, socket.id, username, clientIp);
       if (!room) {
         return socket.emit('error', 'Room not found');
       }
@@ -127,7 +175,8 @@ class SocketHandler {
       this.userSockets.set(socket.id, {
         id: socket.id,
         roomCode: room.code,
-        username: username
+        username: username,
+        ip: clientIp
       });
       
       // Join the socket to the room
@@ -136,14 +185,15 @@ class SocketHandler {
       // Send room data back to the client
       socket.emit('roomJoined', {
         roomCode: room.code,
-        users: Array.from(room.users.values()).map(u => u.username),
-        messages: room.messages
+        users: Array.from(room.users.values()).map(u => u.toJSON().username),
+        messages: room.messages,
+        messageSizeLimit: SecurityUtils.SIZE_LIMITS.MESSAGE
       });
       
       // Notify other users in the room
       socket.to(room.code).emit('userJoined', {
         username: username,
-        users: Array.from(room.users.values()).map(u => u.username)
+        users: Array.from(room.users.values()).map(u => u.toJSON().username)
       });
       
       // Create system message about user joining
@@ -167,10 +217,31 @@ class SocketHandler {
   handleSendMessage(socket, data) {
     try {
       const { roomCode, message } = data;
+      const clientIp = this.getClientIp(socket);
+      
+      // Check message rate limit
+      if (SecurityUtils.isRateLimited(clientIp, 'messages')) {
+        this.logger.warn(`Rate limit exceeded for messages from IP: ${clientIp}`);
+        socket.emit('error', 'You are sending messages too quickly. Please slow down.');
+        return;
+      }
       
       // Validate inputs
-      if (!roomCode || !message || message.trim() === '') {
+      if (!roomCode || !message) {
         return socket.emit('error', 'Room code and message are required');
+      }
+      
+      if (!SecurityUtils.isValidRoomCode(roomCode)) {
+        return socket.emit('error', 'Invalid room code format');
+      }
+      
+      if (!SecurityUtils.isValidMessage(message)) {
+        return socket.emit('error', `Invalid message format or empty message`);
+      }
+      
+      // Check if message exceeds size limit
+      if (message.length > SecurityUtils.SIZE_LIMITS.MESSAGE) {
+        return socket.emit('error', `Message exceeds maximum length of ${SecurityUtils.SIZE_LIMITS.MESSAGE} characters`);
       }
       
       // Check if user is in this room
@@ -202,6 +273,11 @@ class SocketHandler {
    */
   handleDeleteRoom(socket, roomCode) {
     try {
+      // Validate room code
+      if (!SecurityUtils.isValidRoomCode(roomCode)) {
+        return socket.emit('error', 'Invalid room code format');
+      }
+      
       // Check if room exists
       if (!this.roomManager.roomExists(roomCode)) {
         return socket.emit('error', 'Room not found');
@@ -242,6 +318,11 @@ class SocketHandler {
    */
   handleLeaveRoom(socket, roomCode) {
     try {
+      // Validate room code
+      if (!SecurityUtils.isValidRoomCode(roomCode)) {
+        return socket.emit('error', 'Invalid room code format');
+      }
+      
       const userData = this.userSockets.get(socket.id);
       if (!userData || userData.roomCode !== roomCode) {
         return;
@@ -273,7 +354,7 @@ class SocketHandler {
         // Notify about user leaving and potential ownership changes
         this.io.to(roomCode).emit('userLeft', {
           username: username,
-          users: Array.from(room.users.values()).map(u => u.username),
+          users: Array.from(room.users.values()).map(u => u.toJSON().username),
           newOwner: result.newOwnerId
         });
       }
@@ -311,7 +392,7 @@ class SocketHandler {
           // Notify remaining users
           this.io.to(result.roomCode).emit('userLeft', {
             username: username,
-            users: Array.from(result.room.users.values()).map(u => u.username),
+            users: Array.from(result.room.users.values()).map(u => u.toJSON().username),
             newOwner: result.newOwnerId
           });
         }
