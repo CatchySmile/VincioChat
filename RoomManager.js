@@ -115,7 +115,28 @@ class RoomManager {
     
     return null;
   }
-  
+  // Duplicate username check
+  /**
+   * Checks if a username is already taken in a room
+   * @param {string} roomCode - Code of the room
+   * @param {string} username - Username to check
+   * @returns {boolean} True if username is taken, false otherwise
+   */
+  isUsernameTaken(roomCode, username) {
+    const room = this.getRoom(roomCode);
+    if (!room) return false;
+    
+    for (const user of room.users.values()) {
+      if (user.username === username) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+
+
   /**
    * Adds a message to a room
    * @param {string} roomCode - Code of the room
