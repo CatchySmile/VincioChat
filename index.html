@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratchy Chat Room</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen">
+            <h1>Scratchy Chat</h1>
+            <div class="input-group">
+                <label for="username-input">Choose a username</label>
+                <input type="text" id="username-input" placeholder="Enter username" maxlength="20">
+            </div>
+            <button id="continue-btn" class="primary-btn">Continue</button>
+            <p style="margin-top: 1rem;">
+                <a href="#" id="tos-link" style="color: var(--accent-primary); text-decoration: underline;">
+                    Terms of Service & Privacy
+                </a>
+            </p>
+        </div>
+
+        <!-- Room Selection Screen -->
+        <div id="room-selection" class="hidden">
+            <div class="card">
+                <h3>Create a New Room</h3>
+                <button id="create-room-btn" class="primary-btn">Create Room</button>
+            </div>
+            <div class="card">
+                <h3>Join Existing Room</h3>
+                <div class="input-group">
+                    <input type="text" id="room-code-input" placeholder="Enter 12-digit room code" maxlength="12">
+                </div>
+                <button id="join-room-btn" class="primary-btn">Join Room</button>
+            </div>
+        </div>
+
+        <!-- Chat Room Screen -->
+        <div id="chat-room" class="hidden">
+            <div class="chat-header">
+                <h2>Room: <span id="room-code-display"></span></h2>
+                <div class="chat-controls">
+                    <button id="copy-room-code" class="icon-btn" title="Copy room code">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button id="show-users-btn" class="icon-btn" title="Show users">
+                        <i class="fas fa-users"></i>
+                    </button>
+                    <button id="leave-room-btn" class="icon-btn warning" title="Leave room">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-content">
+                <div id="messages-container">
+                    <ul id="messages"></ul>
+                </div>
+            </div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" id="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- User List Modal -->
+    <div id="users-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Users in Room</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <ul id="user-list"></ul>
+            <div class="modal-footer admin-controls hidden">
+                <button id="delete-room-btn" class="danger-btn">Delete Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Room Confirmation Modal -->
+    <div id="leave-confirm-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Leave Room?</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1rem;">
+                <p>Are you sure you want to leave the chat room?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn">Yes, Leave</button>
+                <button class="danger-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOS Modal -->
+    <div id="tos-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Terms of Service</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1rem; max-height: 300px; overflow-y: auto;">
+                <p><strong>Privacy:</strong> We do not store chat logs, IP addresses, or any identifying data. Messages are kept in memory only during the session.</p>
+                <p><strong>Terms:</strong> By using Scratchy Chat, you agree not to misuse the platform. Abuse or illegal activity are not tolerated in any capacity.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn" id="close-tos-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Load Socket.IO client from CDN (for development) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
