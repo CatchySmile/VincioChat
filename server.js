@@ -11,6 +11,7 @@ const rooms = new Map();
 
 app.use(express.static('public'));
 
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   socket.data = { roomCode: null, username: null };
@@ -32,14 +33,6 @@ io.on('connection', (socket) => {
       roomCode,
       users: Array.from(rooms.get(roomCode).users.values())
     });
-
-    const joinMsg = {
-      id: uuidv4(),
-
-      text: `You joined room: ${roomCode}`,
-      timestamp: new Date()
-    };
-    socket.emit('newMessage', joinMsg);
   });
 
   socket.on('joinRoom', ({ roomCode, username }) => {
@@ -58,24 +51,10 @@ io.on('connection', (socket) => {
       messages: room.messages
     });
 
-    const selfJoinMsg = {
-      id: uuidv4(),
-      text: `You joined room: ${roomCode}`,
-      timestamp: new Date()
-    };
-    socket.emit('newMessage', selfJoinMsg);
-
     socket.to(roomCode).emit('userJoined', {
       username,
       users: Array.from(room.users.values())
     });
-
-    const joinMsg = {
-      id: uuidv4(),
-      text: `${username} joined the room`,
-      timestamp: new Date()
-    };
-    socket.to(roomCode).emit('newMessage', joinMsg);
   });
 
   socket.on('sendMessage', ({ roomCode, message }) => {
@@ -118,15 +97,7 @@ io.on('connection', (socket) => {
 
     const room = rooms.get(roomCode);
     room.users.delete(socket.id);
-
-    const leaveMsg = {
-      id: uuidv4(),
-
-      text: `${username} has left the chat.`,
-      timestamp: new Date()
-    };
-    io.to(roomCode).emit('newMessage', leaveMsg);
-
+    socket.leave(roomCode);
     if (room.users.size === 0) {
       rooms.delete(roomCode);
     } else {
