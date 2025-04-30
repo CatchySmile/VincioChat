@@ -5,11 +5,12 @@ const { v4: uuidv4 } = require('uuid');
 const Room = require('../models/Room');
 const Message = require('../models/Message');
 const User = require('../models/User');
-const logger = require('../utils/logger');
+const SecurityUtils = require('../utils/SecurityUtils');
 
 class RoomManager {
-  constructor() {
+  constructor(logger) {
     this.rooms = new Map();
+    this.logger = logger || console;
     
     // Set up periodic cleanup of inactive rooms
     this.initializeCleanupSchedule();
@@ -19,24 +20,24 @@ class RoomManager {
    * Creates a new chat room
    * @param {string} ownerId - Socket ID of the room creator
    * @param {string} ownerName - Username of the room creator
+   * @param {string} ip - IP address of the creator (for rate limiting)
    * @returns {Room} The newly created room
    */
-  createRoom(ownerId, ownerName) {
+  createRoom(ownerId, ownerName, ip) {
     // Generate a short but unique room code
-    // Using slice(0, 6) can lead to collisions, so we implement a safer approach
     let roomCode;
     do {
       roomCode = uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase();
     } while (this.rooms.has(roomCode));
     
     // Create owner as first user
-    const owner = new User(ownerId, ownerName);
+    const owner = new User(ownerId, ownerName, ip);
     
     // Create the room
     const room = new Room(roomCode, owner);
     this.rooms.set(roomCode, room);
     
-    logger.info(`Room created: ${roomCode} by ${ownerName} (${ownerId})`);
+    this.logger.info(`Room created: ${roomCode} by ${ownerName} (${ownerId})`);
     return room;
   }
   
@@ -45,17 +46,24 @@ class RoomManager {
    * @param {string} roomCode - Code of the room to join
    * @param {string} userId - Socket ID of the joining user
    * @param {string} username - Username of the joining user
+   * @param {string} ip - IP address of the user
    * @returns {Object} Room data or null if room doesn't exist
    */
-  joinRoom(roomCode, userId, username) {
+  joinRoom(roomCode, userId, username, ip) {
     const room = this.getRoom(roomCode);
     if (!room) return null;
     
-    const user = new User(userId, username);
+    // Check user limit (prevent DoS by room filling)
+    if (room.users.size >= 50) {
+      this.logger.warn(`Room ${roomCode} has reached maximum user capacity`);
+      return null;
+    }
+    
+    const user = new User(userId, username, ip);
     room.addUser(user);
     room.lastActivity = Date.now();
     
-    logger.info(`User ${username} (${userId}) joined room: ${roomCode}`);
+    this.logger.info(`User ${username} (${userId}) joined room: ${roomCode}`);
     return room;
   }
   
@@ -86,7 +94,7 @@ class RoomManager {
           const newOwner = Array.from(room.users.values())[0];
           room.owner = newOwner;
           newOwnerId = newOwner.id;
-          logger.info(`New owner assigned for room ${roomCode}: ${newOwner.username} (${newOwnerId})`);
+          this.logger.info(`New owner assigned for room ${roomCode}: ${newOwner.username} (${newOwnerId})`);
         }
         
         // Delete room if empty
@@ -95,7 +103,7 @@ class RoomManager {
           return { roomCode, userData, room: null, newOwnerId };
         }
         
-        logger.info(`User ${userData.username} (${userId}) left room: ${roomCode}`);
+        this.logger.info(`User ${userData.username} (${userId}) left room: ${roomCode}`);
         return { 
           roomCode, 
           userData,
@@ -122,13 +130,17 @@ class RoomManager {
     const user = room.getUser(userId);
     if (!user) return null;
     
+    // Validate message length
+    if (text.length > SecurityUtils.SIZE_LIMITS.MESSAGE) {
+      text = text.substring(0, SecurityUtils.SIZE_LIMITS.MESSAGE);
+    }
+    
     const message = new Message(uuidv4(), user.username, text);
     room.addMessage(message);
     room.lastActivity = Date.now();
     
     return message;
   }
-  
   /**
    * Adds a system message to a room
    * @param {string} roomCode - Code of the room
