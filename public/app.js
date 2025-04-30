@@ -102,6 +102,12 @@ function handleUsernameSubmit() {
   } else {
     showToast('Please enter a username', 'error');
   }
+  // Check if username length exceeds 20 characters
+  if (username.length > 20) {
+    navigateTo('welcome-screen');
+    showToast('Username cannot exceed 20 characters', 'error');
+    return;
+  }
 }
 
 function handleCreateRoom() {
@@ -116,6 +122,12 @@ function handleJoinRoom() {
     showToast('Joining room...', 'info');
   } else {
     showToast('Please enter a room code', 'error');
+  }
+  // Check if room code length exceeds 12 characters
+  if (roomCode.length > 12) {
+    navigateTo('room-selection');
+    showToast('Room code cannot exceed 12 characters', 'error');
+    return;
   }
 }
 
@@ -347,6 +359,30 @@ function addSystemMessage(text) {
 function scrollToBottom() {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
+
+document.getElementById("message-form").addEventListener("submit", function(event) {
+  event.preventDefault();
+
+  const messageInput = document.getElementById("message-input");
+  const messageText = messageInput.value.trim();
+
+  // Check if message length exceeds 500 characters
+  if (messageText.length > 500) {
+    messageInput.value = "";
+    showToast("Message cannot exceed 500 characters.", "error");
+    return;
+  }
+  // Check if message is empty
+  if (messageText === "") {
+    showToast("Message cannot be empty.", "error");
+    return;
+  }
+
+
+  // Send message if it's within the limit
+  socket.emit("sendMessage", { roomCode: currentRoomCode, message: messageText });
+  messageInput.value = ""; // Clear input field
+});
 
 function showToast(message, type = 'info') {
   const toastContainer = document.getElementById('toast-container');
