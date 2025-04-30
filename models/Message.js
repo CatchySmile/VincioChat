@@ -1,6 +1,8 @@
 /**
  * Represents a chat message
  */
+const SecurityUtils = require('../utils/SecurityUtils');
+
 class Message {
     /**
      * Creates a new message
@@ -21,16 +23,8 @@ class Message {
      * @returns {string} Sanitized message text
      */
     sanitizeText(text) {
-      // Basic sanitization - in a production app, use a proper sanitization library
-      let sanitized = (text || '').trim();
-      
-      // Limit length
-      const MAX_LENGTH = 2000;
-      if (sanitized.length > MAX_LENGTH) {
-        sanitized = sanitized.slice(0, MAX_LENGTH);
-      }
-      
-      return sanitized;
+      // Use security utility for consistent sanitization
+      return SecurityUtils.sanitizeText(text, SecurityUtils.SIZE_LIMITS.MESSAGE);
     }
     
     /**
@@ -45,6 +39,6 @@ class Message {
         timestamp: this.timestamp
       };
     }
-  }
+}
   
-  module.exports = Message;
+module.exports = Message;
