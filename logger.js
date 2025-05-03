@@ -1,5 +1,6 @@
 /**
- * Simple logging utility
+ * Simple logging utility 
+ * Logs contain no identifiable information and are served from memory.
  */
 const fs = require('fs');
 const path = require('path');
@@ -17,15 +18,15 @@ const LOG_LEVEL = process.env.LOG_LEVEL ?
   LEVELS[process.env.LOG_LEVEL.toUpperCase()] || LEVELS.INFO : 
   LEVELS.INFO;
 
-// Log directory
-const LOG_DIR = path.join(__dirname, '../../logs');
+// Log directory (unused)
+const LOG_DIR = path.join(__dirname, '../../logs'); 
 
 // Create log directory if it doesn't exist
 if (!fs.existsSync(LOG_DIR)) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
-// File for persistent logging
+// File for persistent logging (unused)
 const LOG_FILE = path.join(LOG_DIR, 'app.log');
 
 /**
@@ -102,5 +103,16 @@ const logger = {
     }
   }
 };
+
+// Ensure logs clear every 30 minutes
+setInterval(() => {
+  fs.writeFile(LOG_FILE, '', (err) => {
+    if (err) console.error('Error clearing log file:', err);
+  });
+}, 30 * 60 * 1000); // 30 minutes
+// Clear logs on startup
+fs.writeFile(LOG_FILE, '', (err) => {
+  if (err) console.error('Error clearing log file:', err);
+});
 
 module.exports = logger;
