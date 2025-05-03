@@ -406,6 +406,61 @@ class SocketHandler {
       this.logger.error(`Error handling disconnect: ${error.message}`);
     }
   }
+  //  Socket Cleaner
+  /**
+   * Cleans up old sockets and rooms
+   */
+  cleanUp() {
+    const now = Date.now();
+    
+    // Check for inactive rooms
+    for (const [roomCode, room] of this.roomManager.rooms.entries()) {
+      if (now - room.lastActivity > SecurityUtils.ROOM_INACTIVITY_TIMEOUT) {
+        this.logger.info(`Deleting inactive room: ${roomCode}`);
+        this.roomManager.deleteRoom(roomCode);
+      }
+    }
+    
+    // Check for inactive sockets
+    for (const [socketId, userData] of this.userSockets.entries()) {
+      if (now - userData.lastActivity > SecurityUtils.SOCKET_INACTIVITY_TIMEOUT) {
+        this.logger.info(`Disconnecting inactive socket: ${socketId}`);
+        this.io.sockets.sockets.get(socketId).disconnect(true);
+        this.userSockets.delete(socketId);
+      }
+    }
+  }
+  // Encrypt socket data
+  /**
+   * Encrypts socket data
+   * @param {Object} socket - Socket.IO socket instance
+   * @param {string} data - Data to encrypt
+   * @returns {string} Encrypted data
+   */
+  encryptSocketData(socket, data) {
+    try {
+      const encryptedData = SecurityUtils.encrypt(data, socket.id);
+      return encryptedData;
+    } catch (error) {
+      this.logger.error(`Error encrypting socket data: ${error.message}`);
+      return null;
+    }
+  }
 }
+
+// Ensure message is sent from the correct user
+SocketHandler.prototype.validateMessageSender = function(socket, message) {
+  const userData = this.userSockets.get(socket.id);
+  if (!userData || userData.username !== message.sender) {
+    this.logger.warn(`Invalid message sender: ${message.sender}`);
+    return false;
+  }
+  return true;
+};
+// Ensure socket.io is served from the correct path
+SocketHandler.prototype.serveSocketIO = function(req, res) {
+  res.sendFile(__dirname + '/node_modules/socket.io/client-dist/socket.io.js');
+};
+
 
 module.exports = SocketHandler;
