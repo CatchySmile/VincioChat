@@ -102,12 +102,39 @@ function handleUsernameSubmit() {
   } else {
     showToast('Please enter a username', 'error');
   }
+  // Check for invalid characters or zwj characters
+  if (/[\u200B-\u200D\uFEFF]/.test(username)) {
+    usernameInput.value = '';
+    navigateTo('welcome-screen');
+    showToast('Username contains invalid characters.', 'error');
+    return;
+  }
+  // Check for excessive whitespace
+  if (username.split(/\s+/).length > 5) {
+    usernameInput.value = '';
+    navigateTo('welcome-screen');
+    showToast('Username contains excessive whitespace.', 'error');
+    return;
+  }
   // Check if username length exceeds 20 characters
   if (username.length > 20) {
+    usernameInput.value = '';
     navigateTo('welcome-screen');
     showToast('Username cannot exceed 20 characters', 'error');
     return;
   }
+  
+  // Check if username has special characters 
+  if (/[^a-zA-Z0-9_]/.test(username)) {
+    usernameInput.value = '';
+    navigateTo('welcome-screen');
+    showToast('Username can only contain letters, numbers, and underscores.', 'error');
+    return;
+  }
+  // Ensure username is safe for SQL
+  const sanitizedUsername = username.replace(/'/g, "''");
+  usernameInput.value = sanitizedUsername;
+  state.username = sanitizedUsername;
 }
 
 function handleCreateRoom() {
@@ -123,12 +150,35 @@ function handleJoinRoom() {
   } else {
     showToast('Please enter a room code', 'error');
   }
+  // Check for invalid characters or zwj characters
+  if (/[\u200B-\u200D\uFEFF]/.test(roomCode)) {
+    roomCodeInput.value = '';
+    showToast('Room code contains invalid characters.', 'error');
+    return;
+  }
+  // Check for excessive whitespace
+  if (roomCode.split(/\s+/).length > 2) {
+    roomCodeInput.value = '';
+    showToast('Room code contains excessive whitespace.', 'error');
+    return;
+  }
   // Check if room code length exceeds 12 characters
   if (roomCode.length > 12) {
     navigateTo('room-selection');
     showToast('Room code cannot exceed 12 characters', 'error');
     return;
   }
+  // Check if room code has special characters other than letters and numbers and underscores and dashes
+  if (/[^a-zA-Z0-9_-]/.test(roomCode)) {
+    roomCodeInput.value = '';
+    navigateTo('room-selection');
+    showToast('Room code can only contain letters, numbers, underscores, and dashes.', 'error');
+    return;
+  }
+  // Ensure room code is safe for SQL
+  const sanitizedRoomCode = roomCode.replace(/'/g, "''");
+  roomCodeInput.value = sanitizedRoomCode;
+  state.currentRoom = sanitizedRoomCode;
 }
 
 function handleCopyRoomCode() {
@@ -165,11 +215,26 @@ function leaveRoom() {
     
     // Clear chat history
     messagesContainer.innerHTML = '';
-    
+    roomCodeDisplay.textContent = '';
+    state.users = [];
+    userList.innerHTML = '';
+
     // Navigate back to room selection after everything is done
     navigateTo('room-selection');
-    window.location.href = '/'; // reloads the app or navigates to a welcome page
+    showToast('You have left the room', 'info');
+    // Hide the users modal if it's open
+    if (usersModal.style.display === 'flex') {
+      toggleModal(usersModal, false);
+    }
+    // Hide the leave confirmation modal if it's open
+    if (leaveConfirmModal.style.display === 'flex') {
+      toggleModal(leaveConfirmModal, false);
+    }
+    // Refresh the page to clear any residual data
+    state.currentRoom = null;
+    state.isRoomOwner = false;
     window.location.reload();
+
   }
 }
 
@@ -303,7 +368,6 @@ function updateUsersList() {
       li.classList.add('owner');
       li.textContent += ' (owner)';
     }
-    
     userList.appendChild(li);
   });
 }
@@ -366,6 +430,19 @@ document.getElementById("message-form").addEventListener("submit", function(even
   const messageInput = document.getElementById("message-input");
   const messageText = messageInput.value.trim();
 
+  // Check for invalid characters or zwj characters
+  if (/[\u200B-\u200D\uFEFF]/.test(messageText)) {
+    messageInput.value = "";
+    showToast("Message contains invalid characters.", "error");
+    return;
+  }
+  // Check for excessive whitespace
+  if (messageText.split(/\s+/).length > 30) {
+    messageInput.value = "";
+    showToast("Message contains excessive whitespace.", "error");
+    return;
+  }
+
   // Check if message length exceeds 500 characters
   if (messageText.length > 500) {
     messageInput.value = "";
@@ -383,6 +460,16 @@ document.getElementById("message-form").addEventListener("submit", function(even
   socket.emit("sendMessage", { roomCode: currentRoomCode, message: messageText });
   messageInput.value = ""; // Clear input field
 });
+
+// Flip the message to the right if it's from the current user
+function flipMessageToRight(messageElement) {
+  messageElement.classList.add('flip-right');
+}
+// Flip the message to the left if it's from another user
+function flipMessageToLeft(messageElement) {
+  messageElement.classList.remove('flip-right');
+}
+
 
 function showToast(message, type = 'info') {
   const toastContainer = document.getElementById('toast-container');
