@@ -11,9 +11,53 @@ const rooms = new Map();
 
 app.use(express.static('public'));
 
+// io.engine.clientsCount
 
+// Stats endpoint
+// This endpoint is for internal use only and should be restricted in prod
+
+//const getRoomStats = () => {
+//  return Array.from(rooms.entries()).map(([roomCode, room]) => ({
+//    roomCode,
+//    users: room.users.size,
+//    messages: room.messages.length,
+//    createdAt: room.createdAt,
+//    owner: room.owner
+//  }));
+//};
+
+app.get('/stats', (req, res) => {
+  if (req.ip !== '::1' && req.ip !== '') {
+    return res.status(403).send('Forbidden');
+  }
+  res.json({
+//    connectedUsers: io.engine.clientsCount, // Logging of this level is not needed
+//    activeRooms: rooms.size, // Logging of this level is not needed
+//    rooms: getRoomStats(), // Logging of this level is not needed
+    heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+    uptime: process.uptime(),
+    os: {
+      platform: process.platform,
+      arch: process.arch,
+      nodeVersion: process.version
+    },
+    date: new Date().toISOString()
+  });
+});
+
+
+// wget -qO- http://localhost:80/stats
+// curl -X GET http://localhost:80/stats
+
+
+//setInterval(() => {
+//  display();
+//}, 2110);
+// Display stats on server start
+//display();
+
+// Socket.io connection
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
   socket.data = { roomCode: null, username: null };
 
   socket.on('createRoom', (username) => {
@@ -81,7 +125,6 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     let { roomCode, username } = socket.data;
-
     // Fallback if socket.data is not populated
     if (!roomCode || !username) {
       for (const [code, room] of rooms.entries()) {
@@ -113,6 +156,16 @@ io.on('connection', (socket) => {
     }
   });
 });
+// Refer error 404 to error.html
+app.use((req, res, next) => {
+  res.status(404).sendFile(__dirname + '/public/error.html');
+});
 
-const PORT = process.env.PORT || 3000;
+// Ensure socket.io is served from the correct path
+app.get('/socket.io/socket.io.js', (req, res) => {
+  res.sendFile(__dirname + '/node_modules/socket.io/client-dist/socket.io.js');
+});
+
+
+const PORT = process.env.PORT || 80;
 server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
