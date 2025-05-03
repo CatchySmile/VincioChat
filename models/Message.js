@@ -9,6 +9,7 @@ class Message {
      * @param {string} id - Unique message identifier
      * @param {string} username - Username of the sender
      * @param {string} text - Message content
+     * @param {string} timestamp - Timestamp of the message
      */
     constructor(id, username, text) {
       this.id = id;
