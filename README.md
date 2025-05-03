@@ -1,6 +1,6 @@
 # Scratchy Chat
 
-Scratchy Chat is a memory-only web-based chat room application that allows users to create or join chat rooms using a room code and exchange messages with others. It uses Node.js, Express, and Socket.IO on the backend, and plain JavaScript with HTML/CSS on the frontend.
+Scratchy Chat is a Node.js memory-only web-based chat room application that allows users to create or join chat rooms using a room code and exchange messages with others. It uses Node.js, Express, and Socket.IO on the backend, and plain JavaScript with HTML/CSS on the frontend.
 
 ##  Features
 
