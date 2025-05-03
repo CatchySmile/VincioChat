@@ -1,7 +1,21 @@
 Input validation and sanitization isn't consistently applied
+
 User input isn't properly sanitized against XSS attacks
+
 Rate limiting is implemented inefficiently in localStorage
+
 Message validation isn't using the SecurityUtils module
+
 Client-side validation can be bypassed
+
 Room code validation isn't consistently applied
+
+No Authentication or Authorization Checks for actions preformed
+
+Potential Memory Leak
+    `this.userSockets` and `this.ipConnections` may grow indefinitely in SocketHandler and similar
+
+No Protection Against Replay or Session Hijacking
+    There's no token/session management or encryption verification beyond optional socket ID encryption
+
 Among other issues...
