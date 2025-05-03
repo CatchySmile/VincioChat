@@ -1,0 +1,7 @@
+Input validation and sanitization isn't consistently applied
+User input isn't properly sanitized against XSS attacks
+Rate limiting is implemented inefficiently in localStorage
+Message validation isn't using the SecurityUtils module
+Client-side validation can be bypassed
+Room code validation isn't consistently applied
+Among other issues...
