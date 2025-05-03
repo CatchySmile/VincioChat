@@ -405,7 +405,6 @@ function addMessage(message) {
   
   li.appendChild(messageElement);
   messagesContainer.appendChild(li);
-  
   // Scroll to bottom
   scrollToBottom();
 }
@@ -454,21 +453,60 @@ document.getElementById("message-form").addEventListener("submit", function(even
     showToast("Message cannot be empty.", "error");
     return;
   }
+  // Force delay between messages
+  const lastMessageTime = parseInt(localStorage.getItem("lastMessageTime")) || 0;
+  const currentTime = Date.now();
+  if (currentTime - lastMessageTime < 350) {
+    messageInput.value = "";
+    showToast("You are sending messages over the rate limit. Please wait a moment.", "error");
+    return;
+  }
+  // Update last message time
+  localStorage.setItem("lastMessageTime", currentTime);
 
+  // Cap messages per minute
+  const messageCount = parseInt(localStorage.getItem("messageCount")) || 0;
+  if (messageCount >= 60) {
+    messageInput.value = "";
+    showToast("You are sending messages over the rate limit. Please wait a moment.", "error");
+    return;
+  }
+
+  // Update message count
+  localStorage.setItem("messageCount", messageCount + 1);
+  // Reset message count after 30 seconds
+  setTimeout(() => {
+    localStorage.setItem("messageCount", 0);
+  }, 30000);
+
+  // Check if the message is a command
+  if (messageText.startsWith("/")) {
+    const command = messageText.slice(1).trim();
+    // Handle commands
+    //clear command
+    if (command === "clear") {
+      messagesContainer.innerHTML = "";
+      showToast("Chat cleared", "info");
+      return;
+    // leave command
+    } else if (command === "leave") {
+      leaveRoom();
+      return;
+      // help command
+    } else if (command === "help") {
+      showToast("Available commands: /clear, /help", "info");
+      return;
+    } else {
+      showToast("Unknown command", "error");
+      return;
+    }
+  }
 
   // Send message if it's within the limit
   socket.emit("sendMessage", { roomCode: currentRoomCode, message: messageText });
   messageInput.value = ""; // Clear input field
 });
 
-// Flip the message to the right if it's from the current user
-function flipMessageToRight(messageElement) {
-  messageElement.classList.add('flip-right');
-}
-// Flip the message to the left if it's from another user
-function flipMessageToLeft(messageElement) {
-  messageElement.classList.remove('flip-right');
-}
 
 
 function showToast(message, type = 'info') {
