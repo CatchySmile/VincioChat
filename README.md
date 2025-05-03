@@ -33,6 +33,9 @@ Project Root/
 │   ├── User.js                  # User model
 │   └── Message.js               # Message model
 │
+├── Util/
+│   └── SecurityUtil.js          # Generic Server Security
+│
 ├── server.js                   # Server setup (Express + Socket.IO)
 ├── SocketHandler.js            # Socket event handling
 ├── RoomManager.js              # Manages active rooms
