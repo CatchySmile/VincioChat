@@ -1,0 +1,71 @@
+    <!-- Error page for 404 Not Found -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .error-container {
+            text-align: center;
+        }
+        .error-container h1 {
+            font-size: 3rem;
+            color: #6200ea;
+        }
+        .error-container p {
+            font-size: 1.5rem;
+        }
+        .error-container a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .error-container a:hover {
+            text-decoration: underline;
+        }
+        .error-container button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .error-container button:hover {
+            background-color: #0056b3;
+        }
+        </style>
+
+        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    </head>
+<body>
+    <div class="error-container">
+        <h1>Page Not Found</h1>
+        <p>The page you are looking for does not exist.</p>
+        <p>Redirecting to home page in 5 seconds.</p>
+        <a href="/"><button>Go to Home</button></a>
+    </div>
+<script>
+    // Redirect to home page after 5 seconds
+    setTimeout(function() {
+        window.location.href = '/';
+    }, 5000);
+
+</script>
+</html>
