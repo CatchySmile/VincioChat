@@ -46,8 +46,8 @@ app.get('/stats', (req, res) => {
 });
 
 
-// wget -qO- http://localhost:80/stats
-// curl -X GET http://localhost:80/stats
+// wget -qO- http://localhost:7070/stats
+// curl -X GET http://localhost:7070/stats
 
 
 //setInterval(() => {
@@ -167,5 +167,5 @@ app.get('/socket.io/socket.io.js', (req, res) => {
 });
 
 
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 7070;
 server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
