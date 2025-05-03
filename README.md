@@ -33,7 +33,7 @@ Project Root/
 │   ├── User.js                  # User model
 │   └── Message.js               # Message model
 │
-├── Util/
+├── Utils/
 │   └── SecurityUtil.js          # Generic Server Security
 │
 ├── server.js                   # Server setup (Express + Socket.IO)
