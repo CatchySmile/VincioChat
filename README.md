@@ -20,18 +20,24 @@ Scratchy Chat is a memory-only web-based chat room application that allows users
 ## 🛠 Project Structure
 
 ```
-├───/Public/index.html            # Main HTML file
-├───/Public/styles.css            # Global styling
-├───/Public/app.js                # Frontend logic (Socket.IO client)
-├───/Public/error.html            # Error endpoint
-├───/Public/law.html              # For Law Enforcement to refer to if this goes into prod
-├── server.js             # Server setup (Express + Socket.IO)
-├── SocketHandler.js      # Socket event handling
-├── RoomManager.js        # Manages active rooms
-├───/Models/Room.js               # Room logic and user tracking
-├───/Models/User.js               # User model
-├───/Models/Message.js            # Message model
-├── logger.js             # Utility logging
+Project Root/
+├── Public/
+│   ├── index.html               # Main HTML file
+│   ├── styles.css               # Global styling
+│   ├── app.js                   # Frontend logic (Socket.IO client)
+│   ├── error.html               # Error endpoint
+│   └── law.html                 # Law Enforcement reference page
+│
+├── Models/
+│   ├── Room.js                  # Room logic and user tracking
+│   ├── User.js                  # User model
+│   └── Message.js               # Message model
+│
+├── server.js                   # Server setup (Express + Socket.IO)
+├── SocketHandler.js            # Socket event handling
+├── RoomManager.js              # Manages active rooms
+└── logger.js                   # Utility logging
+
 ```
 
 ## 📦 Installation & Running
