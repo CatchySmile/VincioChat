@@ -70,7 +70,7 @@ Project Root/
 - No messages or user data, or room information are stored permanently, only in memory or temp logs.
 - When a room is deleted all information regarding the room and its contents will immediantly vanish and can not be recovered under any circumstances.
 
-- View full Terms of Service via the in-app modal.
+- View full Terms of Service via the in-app modal or /public/legal.html.
 
 ---
 
