@@ -61,7 +61,7 @@
                 </div>
             </div>
             <form id="message-form">
-                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                <input type="text" id="message-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
                 <button type="submit" id="send-btn">
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -104,12 +104,26 @@
     <div id="tos-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Terms of Service</h3>
+                <h3>🛡 Privacy & Terms</h3>
                 <button class="close-modal">&times;</button>
             </div>
             <div class="modal-body" style="padding: 1rem; max-height: 300px; overflow-y: auto;">
-                <p><strong>Privacy:</strong> We do not store chat logs, IP addresses, or any identifying data. Messages are kept in memory only during the session.</p>
-                <p><strong>Terms:</strong> By using Scratchy Chat, you agree not to misuse the platform. Abuse or illegal activity are not tolerated in any capacity.</p>
+                <div>
+                    <ul>
+                        <li>We do not store chat logs, IP addresses, or any identifying data. Everything else is kept in memory only during the session.</li>
+                        <li>By using Scratchy Chat, you agree not to misuse the platform. Abuse or illegal activity are not tolerated in any capacity.</li>
+                    </ul>
+                        <!-- Centered Law enforcement URL Button-->
+                        <div style="text-align: center;">
+                            <a href="/legal.html" target="_blank" class="primary-btn" 
+                               style="text-decoration: none; margin-top: 1rem; display: inline-block; border-radius: 40%; padding: 0.5rem 1rem; background-color: #007bff; color: white; width: 70%;">
+                               <i class="fas fa-gavel"></i> Legal Information
+                            </a>
+                         </div>
+                         
+                     
+
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="primary-btn" id="close-tos-btn">Close</button>
