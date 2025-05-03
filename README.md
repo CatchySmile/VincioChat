@@ -8,7 +8,7 @@ Scratchy Chat is a memory-only web-based chat room application that allows users
 - Real-time messaging via WebSockets
 - User list display and room ownership
 - Responsive UI with modals and toasts
-- No permanent data storage — messages live in-memory during the session only and they are temporary.
+- No permanent data storage — messages live in-memory during the session only temporarily.
 
 ## 🧩 Technologies Used
 
