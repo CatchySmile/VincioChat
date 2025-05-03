@@ -36,7 +36,7 @@ Project Root/
 ├── server.js                   # Server setup (Express + Socket.IO)
 ├── SocketHandler.js            # Socket event handling
 ├── RoomManager.js              # Manages active rooms
-└── logger.js                   # Utility logging
+└── logger.js                   # Utility logging but this remains for development purposes.
 
 ```
 
