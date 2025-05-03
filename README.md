@@ -2,7 +2,7 @@
 
 Scratchy Chat is a memory-only web-based chat room application that allows users to create or join chat rooms using a room code and exchange messages with others. It uses Node.js, Express, and Socket.IO on the backend, and plain JavaScript with HTML/CSS on the frontend.
 
-## 🚀 Features
+##  Features
 
 - Create or join rooms with 12-digit codes
 - Real-time messaging and room management via WebSockets
@@ -10,14 +10,14 @@ Scratchy Chat is a memory-only web-based chat room application that allows users
 - Responsive UI with modals and toasts
 - No permanent data storage — messages live in-memory during the session only temporarily.
 
-## 🧩 Technologies Used
+##  Technologies Used
 
 - **Frontend:** HTML, CSS, JavaScript
 - **Backend:** Node.js, Express, Socket.IO
 - **Styling:** Custom dark theme with modular SCSS-like variables
 - **Communication:** WebSockets via Socket.IO
 
-## 🛠 Project Structure
+##  Project Structure
 
 ```
 Project Root/
@@ -43,7 +43,7 @@ Project Root/
 
 ```
 
-## 📦 Installation & Running
+##  Installation & Running
 
 1. Clone the repository or extract the zip:
     ```bash
@@ -68,7 +68,7 @@ Project Root/
     http://localhost:7070
     ```
 
-## 🛡 Privacy & Terms
+##  Privacy & Terms
 
 - No messages or user data, or room information are stored permanently, only in memory or temp logs.
 - When a room is deleted all information regarding the room and its contents will immediantly vanish and can not be recovered under any circumstances.
