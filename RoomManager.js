@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const Room = require('../models/Room');
 const Message = require('../models/Message');
 const User = require('../models/User');
-const SecurityUtils = require('../utils/SecurityUtils');
+const SecurityUtils = require('/utils/SecurityUtils');
 
 class RoomManager {
   constructor(logger) {
@@ -264,6 +264,26 @@ class RoomManager {
     }, CLEANUP_INTERVAL);
     
     logger.info('Room cleanup schedule initialized');
+  }
+}
+
+// Force cleanup on startup
+const roomManager = new RoomManager();
+roomManager.initializeCleanupSchedule();
+// Clear all rooms on startup
+for (const roomCode of roomManager.rooms.keys()) {
+  roomManager.deleteRoom(roomCode);
+  logger.info(`Room ${roomCode} cleared on startup`);
+}
+
+// Sanitize rooms
+for (const room of roomManager.rooms.values()) {
+  for (const user of room.users.values()) {
+    user.username = SecurityUtils.sanitizeText(user.username, SecurityUtils.SIZE_LIMITS.USERNAME);
+  }
+  
+  for (const message of room.messages) {
+    message.text = SecurityUtils.sanitizeText(message.text, SecurityUtils.SIZE_LIMITS.MESSAGE);
   }
 }
 
