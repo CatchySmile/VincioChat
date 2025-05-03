@@ -20,15 +20,17 @@ Scratchy Chat is a memory-only web-based chat room application that allows users
 ## 🛠 Project Structure
 
 ```
-├── index.html            # Main HTML file
-├── styles.css            # Global styling
-├── app.js                # Frontend logic (Socket.IO client)
+├───/Public/index.html            # Main HTML file
+├───/Public/styles.css            # Global styling
+├───/Public/app.js                # Frontend logic (Socket.IO client)
+├───/Public/error.html            # Error endpoint
+├───/Public/law.html              # For Law Enforcement to refer to if this goes into prod
 ├── server.js             # Server setup (Express + Socket.IO)
 ├── SocketHandler.js      # Socket event handling
 ├── RoomManager.js        # Manages active rooms
-├── Room.js               # Room logic and user tracking
-├── User.js               # User model
-├── Message.js            # Message model
+├───/Models/Room.js               # Room logic and user tracking
+├───/Models/User.js               # User model
+├───/Models/Message.js            # Message model
 ├── logger.js             # Utility logging
 ```
 
@@ -36,12 +38,15 @@ Scratchy Chat is a memory-only web-based chat room application that allows users
 
 1. Clone the repository or extract the zip:
     ```bash
-    git clone https://github.com/your-username/scratchy-chat.git
+    git clone https://github.com/CatchySmile/ScratchyChat/.git
     ```
 
 2. Install dependencies:
     ```bash
-    npm install
+    npm install socket.io
+    npm install uuid
+    npm install express
+    npm install http
     ```
 
 3. Start the server:
@@ -51,13 +56,14 @@ Scratchy Chat is a memory-only web-based chat room application that allows users
 
 4. Open your browser and navigate to:
     ```
-    http://localhost:3000
+    http://localhost:7070
     ```
 
 ## 🛡 Privacy & Terms
 
-- No messages or user data are stored permanently.
-- Disconnecting clears your presence and chat history.
+- No messages or user data, or room information are stored permanently, only in memory or temp logs.
+- When a room is deleted all information regarding the room and its contents will immediantly vanish and can not be recovered under any circumstances.
+
 - View full Terms of Service via the in-app modal.
 
 ---
