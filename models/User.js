@@ -6,18 +6,19 @@ const SecurityUtils = require('../utils/SecurityUtils');
 class User {
     /**
      * Creates a new user
-     * @param {string} id - Unique identifier (socket ID)
-     * @param {string} username - Display name
-     * @param {string} ip - User's IP address (for rate limiting)
+     * @param {string} id - Unique identifier (socket ID), not logged.
+     * @param {string} username - Display name, not logged.
+     * @param {string} ip - User's IP address (for rate limiting), not logged.
      */
     constructor(id, username, ip) {
       this.id = id;
       this.username = this.sanitizeUsername(username);
       this.joinedAt = Date.now();
       this.lastActivity = Date.now();
-      this.ip = ip; // Store IP for rate limiting
+      this.ip = ip; // For rate limiting, not logged.
     }
-    
+
+
     /**
      * Sanitizes a username to prevent injection attacks
      * @param {string} username - Raw username input
