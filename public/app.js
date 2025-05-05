@@ -25,6 +25,7 @@ const usersModal = document.getElementById('users-modal');
 const adminControls = document.querySelector('.admin-controls');
 const leaveConfirmModal = document.getElementById('leave-confirm-modal');
 const tosModal = document.getElementById('tos-modal');
+const commandModal = document.getElementById(`command-help-modal`)
 
 const usernameInput = document.getElementById('username-input');
 const continueBtn = document.getElementById('continue-btn');
@@ -41,6 +42,11 @@ const messageInput = document.getElementById('message-input');
 const messagesContainer = document.getElementById('messages');
 const userList = document.getElementById('user-list');
 const tosLink = document.getElementById('tos-link');
+const settingsBtn = document.getElementById('settings-btn');
+const settingsModal = document.getElementById('settings-modal');
+const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+
 
 socket.on('connect', () => {
   console.log('Connected to server with ID:', socket.id);
@@ -52,6 +58,23 @@ socket.on('connect_error', (error) => {
 });
 
 
+// In app.js, add CSRF token to all state-changing requests
+function sendStateChangingRequest(eventName, data) {
+  if (!state.csrfToken) {
+    showToast('Security token missing. Please rejoin the room.', 'error');
+    leaveRoom();
+    return false;
+  }
+  
+  // Add CSRF token to data
+  const secureData = {
+    ...data,
+    csrfToken: state.csrfToken
+  };
+  
+  socket.emit(eventName, secureData);
+  return true;
+}
 
 
 // Close buttons for all modals
@@ -167,6 +190,19 @@ function handleCreateRoom() {
   showToast('Creating room...', 'info');
 }
 
+function sanitizeInput(input, maxLength) {
+  let sanitized = input.replace(/<[^>]*>/g, '')
+                       .replace(/\s+/g, ' ')
+                       .trim();
+  
+  // Limit length
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+  }
+  
+  return sanitized;
+}
+
 function handleJoinRoom() {
   const roomCode = roomCodeInput.value.trim();
   if (roomCode) {
@@ -225,6 +261,10 @@ function toggleLeaveModal(show) {
 
 function toggleTosModal(show) {
   toggleModal(tosModal, show);
+}
+
+function toggleCommandHelpModal(show) {
+  toggleModal(commandModal, show)
 }
 
 function confirmLeaveRoom() {
@@ -463,6 +503,66 @@ function addMessage(message) {
   scrollToBottom();
 }
 
+
+settingsBtn.addEventListener('click', () => toggleModal(settingsModal, true));
+saveSettingsBtn.addEventListener('click', saveSettings);
+
+// Function to save settings
+function saveSettings() {
+  // Get settings values
+  const theme = document.getElementById('theme-select').value;
+  const notificationsEnabled = document.getElementById('notification-toggle').checked;
+  const showTimestamps = document.getElementById('message-timestamp-toggle').checked;
+  
+  // Save settings to localStorage
+  const settings = {
+    theme,
+    notificationsEnabled,
+    showTimestamps
+  };
+  localStorage.setItem('scratchyChatSettings', JSON.stringify(settings));
+  
+  // Apply settings
+  applySettings(settings);
+  
+  // Close modal
+  toggleModal(settingsModal, false);
+  showToast('Settings saved', 'success');
+}
+
+// Function to apply settings
+function applySettings(settings) {
+  // Apply theme
+  document.body.className = settings.theme === 'light' ? 'light-theme' : '';
+  
+  // Apply timestamp visibility
+  const timestamps = document.querySelectorAll('.timestamp');
+  timestamps.forEach(timestamp => {
+    timestamp.style.display = settings.showTimestamps ? 'block' : 'none';
+  });
+}
+
+// Load settings on startup
+function loadSettings() {
+  const savedSettings = localStorage.getItem('scratchyChatSettings');
+  if (savedSettings) {
+    const settings = JSON.parse(savedSettings);
+    
+    // Set form values
+    document.getElementById('theme-select').value = settings.theme;
+    document.getElementById('notification-toggle').checked = settings.notificationsEnabled;
+    document.getElementById('message-timestamp-toggle').checked = settings.showTimestamps;
+    
+    // Apply settings
+    applySettings(settings);
+  }
+}
+
+// Call loadSettings when DOM is loaded
+document.addEventListener('DOMContentLoaded', loadSettings);
+
+
+
 // Keep this function for /commands and other system notifications that might be needed
 function addSystemMessage(text) {
   const li = document.createElement('li');
@@ -490,6 +590,62 @@ function scrollToBottom() {
     });
   }
 }
+
+// Add event listener for kicked users
+socket.on('kickedFromRoom', ({ roomCode }) => {
+  showToast('You have been kicked from the room', 'error');
+  state.currentRoom = null;
+  state.isRoomOwner = false;
+  navigateTo('room-selection');
+});
+
+// Add kick functionality to user list items
+function updateUsersList() {
+  userList.innerHTML = '';
+  
+  state.users.forEach(username => {
+    const li = document.createElement('li');
+    li.textContent = username;
+    
+    // Only show kick button for room owner and other users
+    if (state.isRoomOwner && username !== state.username) {
+      const kickBtn = document.createElement('button');
+      kickBtn.className = 'icon-btn warning kick-user-btn';
+      kickBtn.title = 'Kick user';
+      kickBtn.innerHTML = '<i class="fas fa-user-slash"></i>';
+      
+      kickBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        confirmKickUser(username);
+      });
+      
+      li.appendChild(kickBtn);
+    }
+    
+    // Highlight the room owner
+    if (username === state.username && state.isRoomOwner) {
+      li.classList.add('owner');
+    }
+    
+    userList.appendChild(li);
+  });
+}
+
+// Add confirmation modal for kicking users
+function confirmKickUser(username) {
+  // Find the user's socket ID
+  const userToKick = state.users.find(user => user.username === username);
+  if (!userToKick) return;
+  
+  if (confirm(`Are you sure you want to kick ${username}?`)) {
+    socket.emit('kickUser', {
+      roomCode: state.currentRoom,
+      userToKickId: userToKick.id,
+      csrfToken: state.csrfToken
+    });
+  }
+}
+
 
 let lastMessageTime = 0;
 let isCooldown = false;
@@ -577,6 +733,7 @@ document.getElementById("message-form").addEventListener("submit", function(even
     } else if (command === "help") {
       showToast("Available commands: /clear, /help, /leave", "info");
       messageInput.value = "";
+      toggleCommandHelpModal(show)
       return;
     } else {
       showToast("Unknown command", "error");
@@ -585,7 +742,6 @@ document.getElementById("message-form").addEventListener("submit", function(even
     }
   }
 
-  // Send message if it's within the limit - FIXED: using state.currentRoom instead of currentRoomCode
   if (state.currentRoom && state.sessionToken) {
     socket.emit("sendMessage", { 
       roomCode: state.currentRoom, 
