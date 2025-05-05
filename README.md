@@ -1,61 +1,119 @@
 # Scratchy Chat
 
-Scratchy Chat is a Node.js memory-only web-based chat room application that allows users to create or join chat rooms using a room code and exchange messages with others. It uses Node.js, Express, and Socket.IO on the backend, and plain JavaScript with HTML/CSS on the frontend.
+Scratchy Chat is a secure, ephemeral web-based chat application that allows users to create or join chat rooms using unique codes and exchange real-time messages with others. Built with privacy in mind, it stores all data temporarily in memory and implements comprehensive security measures throughout the application.
 
-##  Features
+## Features
 
-- Create or join rooms with 12-digit codes
-- Real-time messaging and room management via WebSockets
-- User list display and room ownership
-- Responsive UI with modals and toasts
-- No permanent data storage — messages live in-memory during the session only temporarily.
+- **Secure Room Management**
+  - Create or join rooms with unique 12-digit alphanumeric codes
+  - Automatic room ownership transfer when owners leave
+  - Room cleanup after periods of inactivity
+  - Limit on maximum users per room to prevent DoS attacks
 
-##  Technologies Used
+- **Real-time Communication**
+  - WebSocket-based messaging via Socket.IO with polling fallback
+  - Message rate limiting and sanitization
+  - Support for simple chat commands (e.g., `/clear`, `/help`, `/leave`)
+  - User join/leave notifications and status updates
 
-- **Frontend:** HTML, CSS, JavaScript
-- **Backend:** Node.js, Express, Socket.IO
-- **Styling:** Custom dark theme with modular SCSS-like variables
-- **Communication:** WebSockets via Socket.IO
+- **Enhanced Security**
+  - XSS protection with input sanitization and DOMPurify
+  - CSRF protection with secure tokens
+  - Rate limiting for connections, messages, and room creation
+  - Secure authentication with session tokens
+  - Content Security Policy implementation
+  - Protection against socket hijacking
 
-##  Project Structure
+- **Privacy-Focused Design**
+  - No permanent data storage—all information exists only in memory
+  - No logs of personal data, messages, or room information
+  - Messages and room data disappear when rooms are deleted
+  - No cookies or user tracking
+
+- **Responsive UI**
+  - Modern dark theme with customizable CSS variables
+  - Mobile-friendly design with touch optimization
+  - Accessibility considerations with contrasting colors
+  - Toast notifications and modal dialogs for better UX
+
+## Technologies Used
+
+- **Frontend:**
+  - HTML5, CSS3 with custom variables for theming
+  - Vanilla JavaScript (ES6+)
+  - Font Awesome icons and Google Fonts
+
+- **Backend:**
+  - Node.js with Express server
+  - Socket.IO for real-time WebSocket communication
+  - Modern ES6+ JavaScript
+  - Helmet for security headers
+
+- **Security:**
+  - DOMPurify for HTML sanitization
+  - Crypto module for secure random generation
+  - UUID for unique identifier generation
+  - JSDOM for DOM manipulation in Node.js
+
+## Project Structure
 
 ```
 Project Root/
 ├── Public/
-│   ├── index.html               # Main HTML file
-│   ├── styles.css               # Global styling
+│   ├── index.html               # Main application HTML
+│   ├── styles.css               # Global CSS styling
 │   ├── app.js                   # Frontend logic (Socket.IO client)
-│   ├── error.html               # Error endpoint
-│   └── law.html                 # Law Enforcement reference page
+│   ├── error.html               # Error page endpoint
+│   └── legal.html               # Legal information and privacy policy
 │
 ├── Models/
-│   ├── Room.js                  # Room logic and user tracking
+│   ├── Room.js                  # Room logic and user management
+│   ├── RoomManager.js           # Manages active rooms
 │   ├── User.js                  # User model
 │   └── Message.js               # Message model
 │
 ├── Utils/
-│   └── SecurityUtil.js          # Generic Server Security
+│   └── SecurityUtils.js         # Security utilities and sanitization
 │
-├── server.js                   # Server setup (Express + Socket.IO)
-├── SocketHandler.js            # Socket event handling
-├── RoomManager.js              # Manages active rooms
-└── logger.js                   # Utility logging but this remains for development purposes.
-
+├── server.js                    # Main server setup (Express + Socket.IO)
+├── SocketHandler.js             # Socket event handling
+└── logger.js                    # Secure logging utility
 ```
 
-##  Installation & Running
+## Security Features
+
+- **Input Validation and Sanitization**
+  - Username, room code, and message content sanitization
+  - Size limits on all inputs
+  - Regex pattern validation for allowed characters
+
+- **Rate Limiting**
+  - Connection rate limiting by IP address
+  - Message rate limiting to prevent spam
+  - Room creation limiting to prevent abuse
+
+- **Session Management**
+  - Secure session tokens with encryption
+  - CSRF token implementation
+  - Activity tracking and timeout management
+
+- **Server Hardening**
+  - Content Security Policy implementation
+  - XSS filters and protections
+  - HSTS headers for transport security
+  - Frame protection against clickjacking
+  - MIME type sniffing prevention
+
+## Installation & Running
 
 1. Clone the repository or extract the zip:
     ```bash
-    git clone https://github.com/CatchySmile/ScratchyChat/.git
+    git clone https://github.com/YourUsername/ScratchyChat.git
     ```
 
 2. Install dependencies:
     ```bash
-    npm install socket.io
-    npm install uuid
-    npm install express
-    npm install http
+    npm install socket.io uuid express helmet jsdom dompurify
     ```
 
 3. Start the server:
@@ -68,13 +126,33 @@ Project Root/
     http://localhost:7070
     ```
 
-##  Privacy & Terms
+## Development
 
-- No messages or user data, or room information are stored permanently, only in memory or temp logs.
-- When a room is deleted all information regarding the room and its contents will immediantly vanish and can not be recovered under any circumstances.
+To modify the application:
 
-- View full Terms of Service via the in-app modal or /public/legal.html.
+1. Edit CSS variables in `public/styles.css` to customize the theme
+2. Add new features by extending the Socket.IO event handlers in `SocketHandler.js`
+3. Improve security by updating validation in `SecurityUtils.js`
+4. Add new models in the `/models` directory as needed
+
+## Privacy & Terms
+
+- No messages, user data, or room information are stored permanently
+- All data exists only in memory during active sessions
+- When a room is deleted, all associated information is immediately removed
+- No logging of personally identifiable information
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
+## Acknowledgements
+
+- Socket.IO team for the real-time WebSocket library
+- Express.js team for the web server framework
+- DOMPurify for security sanitization
+- Font Awesome for UI icons
 
 ---
 
-> Built for fun and experimentation — not for production use.
+> Built with security and privacy as core principles. Not intended for production use without further hardening.
