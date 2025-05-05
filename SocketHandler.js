@@ -124,6 +124,9 @@ class SocketHandler {
     // Disconnect
     socket.on('disconnect', () => this.handleDisconnect(socket));
     
+    // Kick a mf
+    socket.on('kickUser', (data) => this.handleKickUser(socket, data));
+
     // Error handling
     socket.on('error', (error) => {
       this.logger.error(`Socket error for ${socket.id}: ${error.message}`);
@@ -404,6 +407,101 @@ class SocketHandler {
     }
   }
   
+/**
+ * Updated handleKickUser method that works with username instead of socket ID
+ */
+handleKickUser(socket, data) {
+  try {
+    const { roomCode, userToKickUsername, csrfToken } = data;
+    
+    // Validate CSRF token to prevent CSRF attacks
+    if (!csrfToken || !this.validateCSRFToken(socket.id, csrfToken)) {
+      this.logger.warn(`Invalid CSRF token from ${socket.id} for kick action in room ${roomCode}`);
+      return socket.emit('error', 'Invalid security token');
+    }
+    
+    // Validate inputs
+    if (!roomCode || !userToKickUsername) {
+      return socket.emit('error', 'Room code and username are required');
+    }
+    
+    if (!SecurityUtils.isValidRoomCode(roomCode)) {
+      return socket.emit('error', 'Invalid room code format');
+    }
+    
+    // Check if room exists
+    if (!this.roomManager.roomExists(roomCode)) {
+      return socket.emit('error', 'Room not found');
+    }
+    
+    // Check if user is the room owner (only owners can kick)
+    if (!this.roomManager.isRoomOwner(roomCode, socket.id)) {
+      this.logger.warn(`Unauthorized kick attempt for room ${roomCode} by ${socket.id}`);
+      return socket.emit('error', 'Only the room owner can kick users');
+    }
+    
+    // Get the room
+    const room = this.roomManager.getRoom(roomCode);
+    
+    // Find the user to kick by username
+    let userToKickId = null;
+    let kickedUsername = null;
+    
+    for (const [userId, user] of room.users.entries()) {
+      if (user.username === userToKickUsername) {
+        userToKickId = userId;
+        kickedUsername = user.username;
+        break;
+      }
+    }
+    
+    if (!userToKickId) {
+      return socket.emit('error', 'User not found in room');
+    }
+    
+    // Get the socket for the kicked user
+    const kickedSocket = this.io.sockets.sockets.get(userToKickId);
+    
+    // Remove user from room
+    room.removeUser(userToKickId);
+    
+    // Update user tracking for kicked user
+    const kickedUserData = this.userSockets.get(userToKickId);
+    if (kickedUserData) {
+      kickedUserData.roomCode = null;
+      kickedUserData.sessionToken = null;
+      kickedUserData.csrfToken = null;
+      kickedUserData.lastActivity = Date.now();
+    }
+    
+    // Make the kicked user's socket leave the room
+    if (kickedSocket) {
+      kickedSocket.leave(roomCode);
+      kickedSocket.emit('kickedFromRoom', { roomCode });
+    }
+    
+    // Create system message about user being kicked
+    const kickMessage = this.roomManager.addSystemMessage(roomCode, `${kickedUsername} was kicked from the room`);
+    if (kickMessage) {
+      this.io.to(roomCode).emit('newMessage', kickMessage);
+    }
+    
+    // Notify remaining users about the kick
+    this.io.to(roomCode).emit('userLeft', {
+      username: kickedUsername,
+      users: Array.from(room.users.values()).map(u => u.toJSON().username)
+    });
+    
+    // Send success confirmation to the room owner
+    socket.emit('userKicked', { username: kickedUsername });
+    
+    this.logger.info(`User ${kickedUsername} (${userToKickId}) was kicked from room ${roomCode} by ${socket.id}`);
+  } catch (error) {
+    this.logger.error(`Error kicking user: ${error.message}`);
+    socket.emit('error', 'Failed to kick user');
+  }
+}
+
   /**
    * Handles a user explicitly leaving a room
    * @param {Object} socket - Socket.IO socket instance
