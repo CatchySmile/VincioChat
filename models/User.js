@@ -1,5 +1,5 @@
 /**
- * Represents a user in the chat application
+ * Represents a user in the chat application with enhanced security
  */
 const SecurityUtils = require('../utils/SecurityUtils');
 
@@ -18,7 +18,6 @@ class User {
       this.ip = ip; // For rate limiting, not logged.
     }
 
-
     /**
      * Sanitizes a username to prevent injection attacks
      * @param {string} username - Raw username input
@@ -28,8 +27,9 @@ class User {
       // Use security utility for consistent sanitization
       let sanitized = SecurityUtils.sanitizeText(username, SecurityUtils.SIZE_LIMITS.USERNAME);
       
-      // If empty after sanitization, provide a fallback
-      if (!sanitized) {
+      // Ensure username only contains allowed characters
+      if (!SecurityUtils.isValidUsername(sanitized)) {
+        // Generate a random safe username as fallback
         sanitized = `Guest${Math.floor(Math.random() * 10000)}`;
       }
       
@@ -45,6 +45,7 @@ class User {
     
     /**
      * Gets user data safe for transmitting to clients
+     * Excludes sensitive information like IP
      * @returns {Object} User data object
      */
     toJSON() {
