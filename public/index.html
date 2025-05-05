@@ -28,6 +28,7 @@
             </p>
         </div>
 
+        
         <!-- Room Selection Screen -->
         <div id="room-selection" class="hidden">
             <div class="card">
@@ -54,6 +55,9 @@
             <div class="chat-header">
                 <h2>Room: <span id="room-code-display"></span></h2>
                 <div class="chat-controls">
+                    <button id="settings-btn" class="icon-btn" title="Settings">
+                      <i class="fas fa-cog"></i>
+                    </button>
                     <button id="copy-room-code" class="icon-btn" title="Copy room code">
                         <i class="fas fa-copy"></i>
                     </button>
@@ -63,6 +67,7 @@
                     <button id="leave-room-btn" class="icon-btn warning" title="Leave room">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
+                    
                 </div>
             </div>
             <div class="chat-content">
@@ -193,6 +198,50 @@
             </div>
         </div>
     </div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-cog"></i> Settings</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Theme Settings -->
+        <div class="settings-section">
+          <h4>Theme</h4>
+          <div class="settings-option">
+            <label for="theme-select">Choose Theme:</label>
+            <select id="theme-select">
+              <option value="dark">Dark Theme</option>
+              <option value="light">Light Theme</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Notification Settings -->
+        <div class="settings-section">
+          <h4>Notifications</h4>
+          <div class="settings-option">
+            <label for="notification-toggle">Enable sound:</label>
+            <input type="checkbox" id="notification-toggle">
+          </div>
+        </div>
+        
+        <!-- Message Settings -->
+        <div class="settings-section">
+          <h4>Messages</h4>
+          <div class="settings-option">
+            <label for="message-timestamp-toggle">Show timestamps:</label>
+            <input type="checkbox" id="message-timestamp-toggle" checked>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="primary-btn" id="save-settings-btn">Save Settings</button>
+      </div>
+    </div>
+  </div>
 
     <!-- Toast Notifications -->
     <div id="toast-container"></div>
