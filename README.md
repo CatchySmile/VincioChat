@@ -1,7 +1,6 @@
 # Scratchy Chat
 
-Scratchy Chat is a secure, ephemeral web-based chat application that allows users to create or join chat rooms using unique codes and exchange real-time messages with others. Built with privacy in mind, it stores all data temporarily in memory and implements comprehensive security measures throughout the application.
-
+Scratchy Chat is a secure, ephemeral web-based chat application that allows users to create or join chat rooms using WebSockets . Built with privacy in mind, it stores all data temporarily in memory and we have a zero log & zero data retention design.
 ## Features
 
 - **Secure Room Management**
@@ -15,14 +14,6 @@ Scratchy Chat is a secure, ephemeral web-based chat application that allows user
   - Message rate limiting and sanitization
   - Support for simple chat commands (e.g., `/clear`, `/help`, `/leave`)
   - User join/leave notifications and status updates
-
-- **Enhanced Security**
-  - XSS protection with input sanitization and DOMPurify
-  - CSRF protection with secure tokens
-  - Rate limiting for connections, messages, and room creation
-  - Secure authentication with session tokens
-  - Content Security Policy implementation
-  - Protection against socket hijacking
 
 - **Privacy-Focused Design**
   - No permanent data storage—all information exists only in memory
@@ -108,7 +99,7 @@ Project Root/
 
 1. Clone the repository or extract the zip:
     ```bash
-    git clone https://github.com/YourUsername/ScratchyChat.git
+    git clone https://github.com/CatchySmile/ScratchyChat.git
     ```
 
 2. Install dependencies:
@@ -132,7 +123,7 @@ To modify the application:
 
 1. Edit CSS variables in `public/styles.css` to customize the theme
 2. Add new features by extending the Socket.IO event handlers in `SocketHandler.js`
-3. Improve security by updating validation in `SecurityUtils.js`
+3. Improve security by updating validation in `utils/SecurityUtils.js`
 4. Add new models in the `/models` directory as needed
 
 ## Privacy & Terms
