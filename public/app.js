@@ -124,6 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('leave-confirm-modal').querySelector('.primary-btn').addEventListener('click', confirmLeaveRoom);
   document.getElementById('leave-confirm-modal').querySelector('.danger-btn').addEventListener('click', () => toggleLeaveModal(false));
   
+  // Kick modal
+  createKickConfirmModal();
+
   // TOS Link
   tosLink.addEventListener('click', (e) => {
     e.preventDefault();
@@ -445,6 +448,7 @@ function toggleModal(modal, show) {
   }
 }
 
+// First, let's fix the updateUsersList function to properly show kick buttons
 function updateUsersList() {
   userList.innerHTML = '';
   
@@ -452,14 +456,140 @@ function updateUsersList() {
     const li = document.createElement('li');
     li.textContent = username;
     
+    // Only show kick button for room owner and for other users (not for self)
+    if (state.isRoomOwner && username !== state.username) {
+      const kickBtn = document.createElement('button');
+      kickBtn.className = 'icon-btn warning';
+      kickBtn.title = 'Kick user';
+      kickBtn.innerHTML = '<i class="fas fa-user-slash"></i>';
+      
+      kickBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        confirmKickUser(username);
+      });
+      
+      li.appendChild(kickBtn);
+    }
+    
     // Highlight the room owner
     if (username === state.username && state.isRoomOwner) {
       li.classList.add('owner');
-      li.textContent += ' (owner)';
     }
+    
     userList.appendChild(li);
   });
 }
+
+// Create a modal for kick user confirmation
+function createKickConfirmModal() {
+  // Check if modal already exists
+  if (document.getElementById('kick-confirm-modal')) {
+    return;
+  }
+  
+  const modal = document.createElement('div');
+  modal.id = 'kick-confirm-modal';
+  modal.className = 'modal';
+  
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-user-slash"></i> Kick User</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to kick <span id="kick-username"></span> from the room?</p>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+          This user will not be able to rejoin unless they know the room code.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button id="confirm-kick-btn" class="danger-btn">Yes, Kick User</button>
+        <button id="cancel-kick-btn" class="primary-btn">Cancel</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Add event listeners to the new buttons
+  document.querySelector('#kick-confirm-modal .close-modal')
+    .addEventListener('click', () => toggleKickModal(false));
+  document.getElementById('cancel-kick-btn')
+    .addEventListener('click', () => toggleKickModal(false));
+  document.getElementById('confirm-kick-btn')
+    .addEventListener('click', executeKickUser);
+  
+  return modal;
+}
+
+// Global variable to store the username of the user to kick
+let userToKick = null;
+
+// Toggle the kick confirmation modal
+function toggleKickModal(show, username = null) {
+  const modal = document.getElementById('kick-confirm-modal') || createKickConfirmModal();
+  
+  if (show && username) {
+    userToKick = username;
+    document.getElementById('kick-username').textContent = username;
+  } else {
+    userToKick = null;
+  }
+  
+  modal.style.display = show ? 'flex' : 'none';
+}
+
+// Confirm kick user
+function confirmKickUser(username) {
+  toggleKickModal(true, username);
+}
+
+// Execute kick user
+function executeKickUser() {
+  if (!userToKick || !state.currentRoom || !state.isRoomOwner) {
+    toggleKickModal(false);
+    return;
+  }
+  
+  // Find the user's information from the users array
+  const userInfo = state.users.find(user => user === userToKick);
+  
+  if (!userInfo) {
+    showToast('User not found', 'error');
+    toggleKickModal(false);
+    return;
+  }
+  
+  // To ensure security, we need to use a properly formatted event handler
+  // that includes CSRF protection
+  if (!state.csrfToken) {
+    showToast('Security token missing. Please rejoin the room.', 'error');
+    toggleKickModal(false);
+    return;
+  }
+  
+
+  socket.emit('kickUser', {
+    roomCode: state.currentRoom,
+    userToKickUsername: userToKick,
+    csrfToken: state.csrfToken
+  });
+  
+  toggleKickModal(false);
+}
+
+// Add event listener for kicked users confirmation
+socket.on('userKicked', ({ username }) => {
+  showToast(`${username} was kicked from the room`, 'success');
+});
+
+// Event listener for being kicked
+socket.on('kickedFromRoom', ({ roomCode }) => {
+  showToast('You have been kicked from the room', 'error');
+  leaveRoom();
+});
+
 
 function addMessage(message) {
   // Filter out system messages (that have "System" as username)
@@ -631,20 +761,6 @@ function scrollToBottom() {
     });
   }
 
-  // Add confirmation modal for kicking users
-  function confirmKickUser(username) {
-    // Find the user's socket ID
-    const userToKick = state.users.find(user => user.username === username);
-    if (!userToKick) return;
-    
-    if (confirm(`Are you sure you want to kick ${username}?`)) {
-      socket.emit('kickUser', {
-        roomCode: state.currentRoom,
-        userToKickId: userToKick.id,
-        csrfToken: state.csrfToken
-      });
-    }
-  }
 
 
 let lastMessageTime = 0;
@@ -718,7 +834,7 @@ document.getElementById("message-form").addEventListener("submit", function(even
   if (messageText.startsWith("/")) {
     const command = messageText.slice(1).trim();
     // Handle commands
-    //clear command
+    // clear command
     if (command === "clear") {
       messagesContainer.innerHTML = "";
       showToast("Chat cleared", "info");
@@ -729,11 +845,10 @@ document.getElementById("message-form").addEventListener("submit", function(even
       leaveRoom();
       messageInput.value = "";
       return;
-      // help command
+    // help command - FIX: Pass true to toggleCommandHelpModal to show the modal
     } else if (command === "help") {
-      showToast("Available commands: /clear, /help, /leave", "info");
+      toggleCommandHelpModal(true);  // Fixed: Pass true to show the modal
       messageInput.value = "";
-      toggleCommandHelpModal(show)
       return;
     } else {
       showToast("Unknown command", "error");
@@ -741,7 +856,9 @@ document.getElementById("message-form").addEventListener("submit", function(even
       return;
     }
   }
-
+  document.getElementById('close-command-help-btn').addEventListener('click', () => {
+    toggleCommandHelpModal(false);
+  });
   if (state.currentRoom && state.sessionToken) {
     socket.emit("sendMessage", { 
       roomCode: state.currentRoom, 
