@@ -1,0 +1,127 @@
+/* Accent Colors */
+
+/* Base font size variable */
+:root {
+    --base-font-size: 1rem;
+  }
+  
+  /* Font size modifiers */
+  .font-small {
+    --base-font-size: 0.9rem;
+  }
+  
+  .font-medium {
+    --base-font-size: 1rem;
+  }
+  
+  .font-large {
+    --base-font-size: 1.1rem;
+  }
+  
+  /* Apply font size to relevant elements */
+  body {
+    font-size: var(--base-font-size);
+  }
+  
+  .message .text {
+    font-size: var(--base-font-size);
+  }
+  
+  .message .username {
+    font-size: calc(var(--base-font-size) * 0.9);
+  }
+  
+  .message .timestamp {
+    font-size: calc(var(--base-font-size) * 0.7);
+  }
+  
+  /* Default accent colors (purple) */
+  :root {
+    --accent-primary: #8a54fd;
+    --accent-secondary: #6a3dd8;
+    --accent-tertiary: #4728a0;
+    --accent-hover: #9d73ff;
+    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
+  }
+  
+  /* Blue accent */
+  :root.accent-blue {
+    --accent-primary: #4285f4;
+    --accent-secondary: #3367d6;
+    --accent-tertiary: #2a56c6;
+    --accent-hover: #5a95f5;
+    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
+  }
+
+  /* Red accent */
+  :root.accent-red {
+    --accent-primary: #ff3333;
+    --accent-secondary: #e60000;
+    --accent-tertiary: #800000;
+    --accent-hover: #660000;
+    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
+  }
+  
+  /* Black accent */
+  :root.accent-black {
+    --accent-primary: #4d4d4d;
+    --accent-secondary: #1a1a1a;
+    --accent-tertiary: #262626;
+    --accent-hover: #333333;
+    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
+  }
+
+  /* Green accent */
+  :root.accent-green {
+    --accent-primary: #34a853;
+    --accent-secondary: #2e9549;
+    --accent-tertiary: #1e8e3e;
+    --accent-hover: #46bf65;
+    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
+  }
+  
+  /* Pink accent */
+  :root.accent-pink {
+    --accent-primary: #e84e8a;
+    --accent-secondary: #d84177;
+    --accent-tertiary: #c13b6b;
+    --accent-hover: #ec699b;
+    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
+  }
+  
+  /* Additional styles for the accent color selector */
+  #accent-color-select {
+    background-position: right 8px center;
+    padding-right: 30px;
+  }
+  
+  /* Color indicators in the dropdown */
+  #accent-color-select option[value="purple"]::before {
+    content: "🟣 ";
+  }
+  
+  #accent-color-select option[value="blue"]::before {
+    content: "🔵 ";
+  }
+  
+  #accent-color-select option[value="red"]::before {
+    content: "🔴 ";
+  }
+  
+  #accent-color-select option[value="green"]::before {
+    content: "🟢 ";
+  }
+  
+  #accent-color-select option[value="pink"]::before {
+    content: "🔴 ";
+  }
+  
+  #accent-color-select option[value="black"]::before {
+    content: "⚫ ";
+  }
