@@ -1,4 +1,2 @@
-Apply ratelimit so we cant send more then 40 messages per minute, it currently doesnt work through security utils.
-Adding some sort of settings menu or panel...
-Allow room owners to Kick anyone in there room (force them to leave)
-Overall better cyber security is also required.
+toggleCommandHelpModal needs to be fixed so our command help modal shows instead of the toast.
+Kicking users doesnt work and needs proper validation.
