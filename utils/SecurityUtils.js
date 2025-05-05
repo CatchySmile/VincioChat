@@ -18,9 +18,9 @@ class SecurityUtils {
    * Rate limit constants
    */
   static RATE_LIMIT = {
-    MESSAGES: { max: 20, period: 60000 }, // 20 messages per minute
-    CONNECTIONS: { max: 10, period: 60000 }, // 10 connections per minute
-    ROOMS: { max: 3, period: 300000 } // 3 rooms per 5 minutes
+    MESSAGES: { max: 200, period: 60000 }, // 20 messages per minute
+    CONNECTIONS: { max: 100, period: 60000 }, // 10 connections per minute
+    ROOMS: { max: 30, period: 300000 } // 3 rooms per 5 minutes
   };
 
   /**
