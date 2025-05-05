@@ -1,8 +1,7 @@
 /**
- * Handles all Socket.IO events and communication
+ * Handles all Socket.IO events and communication with enhanced security
  */
-const SecurityUtils = require('../utils/SecurityUtils');
-
+const SecurityUtils = require('./utils/SecurityUtils');
 class SocketHandler {
   /**
    * Creates a new SocketHandler
@@ -15,11 +14,46 @@ class SocketHandler {
     this.roomManager = roomManager;
     this.logger = logger;
     
-    // Track user details by socket ID
+    // Track user details by socket ID with last activity timestamp
     this.userSockets = new Map();
     
-    // Track IP addresses for rate limiting
-    this.ipConnections = new Map();
+    // Set up periodic cleanup for memory management
+    this.setupCleanupSchedule();
+  }
+  
+  /**
+   * Sets up periodic cleanup of inactive resources
+   */
+  setupCleanupSchedule() {
+    // Clean up inactive sockets every hour
+    setInterval(() => this.cleanupInactiveSockets(), 3600000);
+    
+    this.logger.info('Socket cleanup schedule initialized');
+  }
+  
+  /**
+   * Cleans up inactive socket entries
+   */
+  cleanupInactiveSockets() {
+    const now = Date.now();
+    let cleanedCount = 0;
+    
+    for (const [socketId, userData] of this.userSockets.entries()) {
+      // Check if socket data is stale (inactive for 2+ hours)
+      if (!userData.lastActivity || 
+          now - userData.lastActivity > SecurityUtils.TIMEOUTS.SOCKET_INACTIVITY) {
+        // Check if socket is still connected
+        const socket = this.io.sockets.sockets.get(socketId);
+        if (!socket || !socket.connected) {
+          this.userSockets.delete(socketId);
+          cleanedCount++;
+        }
+      }
+    }
+    
+    if (cleanedCount > 0) {
+      this.logger.info(`Cleaned up ${cleanedCount} inactive socket entries`);
+    }
   }
   
   /**
@@ -51,12 +85,15 @@ class SocketHandler {
       
       this.logger.info(`New client connected: ${socket.id} from ${clientIp}`);
       
-      // Track this socket
+      // Track this socket with activity timestamp
       this.userSockets.set(socket.id, {
         id: socket.id,
         roomCode: null,
         username: null,
-        ip: clientIp
+        ip: clientIp,
+        lastActivity: Date.now(),
+        sessionToken: null,
+        csrfToken: null
       });
       
       // Set up event handlers for this socket
@@ -79,7 +116,7 @@ class SocketHandler {
     socket.on('sendMessage', (data) => this.handleSendMessage(socket, data));
     
     // Delete Room
-    socket.on('deleteRoom', (roomCode) => this.handleDeleteRoom(socket, roomCode));
+    socket.on('deleteRoom', (data) => this.handleDeleteRoom(socket, data));
     
     // Leave Room (explicit)
     socket.on('leaveRoom', (roomCode) => this.handleLeaveRoom(socket, roomCode));
@@ -111,28 +148,41 @@ class SocketHandler {
       
       // Validate username
       if (!SecurityUtils.isValidUsername(username)) {
-        return socket.emit('error', 'Invalid username. Username must be between 1-20 characters.');
+        return socket.emit('error', 'Invalid username. Username must be between 1-20 characters and contain only letters, numbers, and underscores.');
       }
       
       // Create the room with client IP for the user
       const room = this.roomManager.createRoom(socket.id, username, clientIp);
       
-      // Update user tracking
-      this.userSockets.set(socket.id, {
+      // Generate session token for authentication
+      const sessionToken = SecurityUtils.generateSessionToken(socket.id, room.code);
+      
+      // Generate CSRF token for form submissions
+      const csrfToken = SecurityUtils.generateCSRFToken(socket.id);
+      
+      // Update user tracking with security tokens
+      const userData = {
         id: socket.id,
         roomCode: room.code,
         username: username,
-        ip: clientIp
-      });
+        ip: clientIp,
+        lastActivity: Date.now(),
+        sessionToken: sessionToken,
+        csrfToken: csrfToken
+      };
+      
+      this.userSockets.set(socket.id, userData);
       
       // Join the socket to the room
       socket.join(room.code);
       
-      // Send room data back to the client
+      // Send room data and security tokens back to the client
       socket.emit('roomCreated', {
         roomCode: room.code,
         users: Array.from(room.users.values()).map(u => u.toJSON().username),
-        messageSizeLimit: SecurityUtils.SIZE_LIMITS.MESSAGE
+        messageSizeLimit: SecurityUtils.SIZE_LIMITS.MESSAGE,
+        sessionToken: sessionToken,
+        csrfToken: csrfToken
       });
       
       this.logger.info(`Room created: ${room.code} by ${username} (${socket.id})`);
@@ -162,32 +212,51 @@ class SocketHandler {
       }
       
       if (!SecurityUtils.isValidUsername(username)) {
-        return socket.emit('error', 'Invalid username. Username must be between 1-20 characters.');
+        return socket.emit('error', 'Invalid username. Username must be between 1-20 characters and contain only letters, numbers, and underscores.');
+      }
+      
+      // Check if username is already taken in this room
+      if (this.roomManager.isUsernameTaken(roomCode, username)) {
+        return socket.emit('error', 'Username already taken in this room');
       }
       
       // Try to join the room
       const room = this.roomManager.joinRoom(roomCode, socket.id, username, clientIp);
       if (!room) {
-        return socket.emit('error', 'Room not found');
+        return socket.emit('error', 'Room not found or room is full');
       }
       
-      // Update user tracking
-      this.userSockets.set(socket.id, {
+      // Generate session token for authentication
+      const sessionToken = SecurityUtils.generateSessionToken(socket.id, room.code);
+      
+      // Generate CSRF token for form submissions
+      const csrfToken = SecurityUtils.generateCSRFToken(socket.id);
+      
+      // Update user tracking with security tokens
+      const userData = {
         id: socket.id,
         roomCode: room.code,
         username: username,
-        ip: clientIp
-      });
+        ip: clientIp,
+        lastActivity: Date.now(),
+        sessionToken: sessionToken,
+        csrfToken: csrfToken
+      };
+      
+      this.userSockets.set(socket.id, userData);
       
       // Join the socket to the room
       socket.join(room.code);
       
-      // Send room data back to the client
+      // Send room data and security tokens back to the client
       socket.emit('roomJoined', {
         roomCode: room.code,
         users: Array.from(room.users.values()).map(u => u.toJSON().username),
         messages: room.messages,
-        messageSizeLimit: SecurityUtils.SIZE_LIMITS.MESSAGE
+        messageSizeLimit: SecurityUtils.SIZE_LIMITS.MESSAGE,
+        sessionToken: sessionToken,
+        csrfToken: csrfToken,
+        isRoomOwner: room.isOwner(socket.id)
       });
       
       // Notify other users in the room
@@ -199,7 +268,7 @@ class SocketHandler {
       // Create system message about user joining
       const joinMessage = this.roomManager.addSystemMessage(room.code, `${username} joined the room`);
       if (joinMessage) {
-        socket.to(room.code).emit('newMessage', joinMessage);
+        this.io.to(room.code).emit('newMessage', joinMessage);
       }
       
       this.logger.info(`User ${username} (${socket.id}) joined room: ${room.code}`);
@@ -210,14 +279,20 @@ class SocketHandler {
   }
   
   /**
-   * Handles sending a message in a room
+   * Handles sending a message with proper authentication
    * @param {Object} socket - Socket.IO socket instance
-   * @param {Object} data - Message data (roomCode, message)
+   * @param {Object} data - Message data (roomCode, message, sessionToken)
    */
   handleSendMessage(socket, data) {
     try {
-      const { roomCode, message } = data;
+      const { roomCode, message, sessionToken } = data;
       const clientIp = this.getClientIp(socket);
+      
+      // Validate session token for authenticated action
+      if (!sessionToken || !SecurityUtils.validateSessionToken(sessionToken, socket.id, roomCode)) {
+        this.logger.warn(`Invalid session token from ${socket.id} for room ${roomCode}`);
+        return socket.emit('error', 'Invalid session. Please rejoin the room.');
+      }
       
       // Check message rate limit
       if (SecurityUtils.isRateLimited(clientIp, 'messages')) {
@@ -250,13 +325,16 @@ class SocketHandler {
         return socket.emit('error', 'You are not in this room');
       }
       
+      // Update last activity timestamp for session management
+      userData.lastActivity = Date.now();
+      
       // Add the message to the room
       const messageObj = this.roomManager.addMessage(roomCode, socket.id, message);
       if (!messageObj) {
         return socket.emit('error', 'Failed to send message');
       }
       
-      // Broadcast message to all users in the room
+      // Broadcast sanitized message to all users in the room
       this.io.to(roomCode).emit('newMessage', messageObj);
       
       this.logger.debug(`Message in room ${roomCode} from ${userData.username}: ${message.substring(0, 20)}${message.length > 20 ? '...' : ''}`);
@@ -267,12 +345,20 @@ class SocketHandler {
   }
   
   /**
-   * Handles room deletion
+   * Handles room deletion with proper authorization
    * @param {Object} socket - Socket.IO socket instance
-   * @param {string} roomCode - Code of the room to delete
+   * @param {Object} data - Room data (roomCode, csrfToken)
    */
-  handleDeleteRoom(socket, roomCode) {
+  handleDeleteRoom(socket, data) {
     try {
+      const { roomCode, csrfToken } = data;
+      
+      // Validate CSRF token to prevent CSRF attacks
+      if (!csrfToken || !this.validateCSRFToken(socket.id, csrfToken)) {
+        this.logger.warn(`Invalid CSRF token from ${socket.id} for room ${roomCode}`);
+        return socket.emit('error', 'Invalid request token');
+      }
+      
       // Validate room code
       if (!SecurityUtils.isValidRoomCode(roomCode)) {
         return socket.emit('error', 'Invalid room code format');
@@ -285,7 +371,14 @@ class SocketHandler {
       
       // Check if user is the room owner
       if (!this.roomManager.isRoomOwner(roomCode, socket.id)) {
+        this.logger.warn(`Unauthorized deletion attempt for room ${roomCode} by ${socket.id}`);
         return socket.emit('error', 'Only the room owner can delete the room');
+      }
+      
+      // Update user activity timestamp
+      const userData = this.userSockets.get(socket.id);
+      if (userData) {
+        userData.lastActivity = Date.now();
       }
       
       // Notify all users in the room
@@ -337,6 +430,9 @@ class SocketHandler {
       
       // Update user tracking
       userData.roomCode = null;
+      userData.sessionToken = null;
+      userData.csrfToken = null;
+      userData.lastActivity = Date.now();
       
       // Leave the socket room
       socket.leave(roomCode);
@@ -406,61 +502,17 @@ class SocketHandler {
       this.logger.error(`Error handling disconnect: ${error.message}`);
     }
   }
-  //  Socket Cleaner
+  
   /**
-   * Cleans up old sockets and rooms
+   * Validates a CSRF token
+   * @param {string} socketId - Socket ID to validate against
+   * @param {string} token - Token to validate
+   * @returns {boolean} True if valid, false otherwise
    */
-  cleanUp() {
-    const now = Date.now();
-    
-    // Check for inactive rooms
-    for (const [roomCode, room] of this.roomManager.rooms.entries()) {
-      if (now - room.lastActivity > SecurityUtils.ROOM_INACTIVITY_TIMEOUT) {
-        this.logger.info(`Deleting inactive room: ${roomCode}`);
-        this.roomManager.deleteRoom(roomCode);
-      }
-    }
-    
-    // Check for inactive sockets
-    for (const [socketId, userData] of this.userSockets.entries()) {
-      if (now - userData.lastActivity > SecurityUtils.SOCKET_INACTIVITY_TIMEOUT) {
-        this.logger.info(`Disconnecting inactive socket: ${socketId}`);
-        this.io.sockets.sockets.get(socketId).disconnect(true);
-        this.userSockets.delete(socketId);
-      }
-    }
-  }
-  // Encrypt socket data
-  /**
-   * Encrypts socket data
-   * @param {Object} socket - Socket.IO socket instance
-   * @param {string} data - Data to encrypt
-   * @returns {string} Encrypted data
-   */
-  encryptSocketData(socket, data) {
-    try {
-      const encryptedData = SecurityUtils.encrypt(data, socket.id);
-      return encryptedData;
-    } catch (error) {
-      this.logger.error(`Error encrypting socket data: ${error.message}`);
-      return null;
-    }
+  validateCSRFToken(socketId, token) {
+    const userData = this.userSockets.get(socketId);
+    return userData && userData.csrfToken === token;
   }
 }
-
-// Ensure message is sent from the correct user
-SocketHandler.prototype.validateMessageSender = function(socket, message) {
-  const userData = this.userSockets.get(socket.id);
-  if (!userData || userData.username !== message.sender) {
-    this.logger.warn(`Invalid message sender: ${message.sender}`);
-    return false;
-  }
-  return true;
-};
-// Ensure socket.io is served from the correct path
-SocketHandler.prototype.serveSocketIO = function(req, res) {
-  res.sendFile(__dirname + '/node_modules/socket.io/client-dist/socket.io.js');
-};
-
 
 module.exports = SocketHandler;
