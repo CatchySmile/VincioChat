@@ -1,164 +1,113 @@
+/**
+ * Enhanced server with security improvements
+ */
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
 const socketIo = require('socket.io');
+const helmet = require('helmet');
+const RoomManager = require('./models/RoomManager');
+const SocketHandler = require('./SocketHandler');
+const logger = require('./logger');
 
+// Initialize Express app
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*", // Allow all origins in development
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  // Allow both polling and websocket for better compatibility
+  transports: ['polling', 'websocket'],
+  // Enable EIO version 3 for compatibility
+  allowEIO3: true
+});
 
-const rooms = new Map();
+app.get('/socket.io/socket.io.js', (req, res) => {
+  res.sendFile(require.resolve('socket.io/client-dist/socket.io.js'));
+});
 
-app.use(express.static('public'));
+// Add security middleware with Helmet
+app.use(helmet());
 
-// io.engine.clientsCount
+// Set security headers
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+    styleSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+    fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+    connectSrc: ["'self'"],
+    frameSrc: ["'none'"],
+    objectSrc: ["'none'"]
+  }
+}));
 
-// Stats endpoint
-// This endpoint is for internal use only and should be restricted in prod
+// Use other security headers
+app.use(helmet.xssFilter());
+app.use(helmet.noSniff());
+app.use(helmet.frameguard({ action: 'deny' }));
+app.use(helmet.hsts({
+  maxAge: 15552000, // 180 days in seconds
+  includeSubDomains: true,
+  preload: true
+}));
 
-//const getRoomStats = () => {
-//  return Array.from(rooms.entries()).map(([roomCode, room]) => ({
-//    roomCode,
-//    users: room.users.size,
-//    messages: room.messages.length,
-//    createdAt: room.createdAt,
-//    owner: room.owner
-//  }));
-//};
+// Rate limiting middleware for HTTP requests
+const httpRateLimit = (req, res, next) => {
+  const clientIp = req.ip || req.connection.remoteAddress;
+  
+  // Skip rate limiting for static assets
+  if (req.path.startsWith('/public/') || 
+      req.path.startsWith('/styles/') || 
+      req.path.startsWith('/js/')) {
+    return next();
+  }
+  
+  // Check rate limiting
+  if (clientIp && require('./utils/SecurityUtils').isRateLimited(clientIp, 'connections')) {
+    logger.warn(`HTTP rate limit exceeded for IP: ${clientIp}`);
+    return res.status(429).send('Too Many Requests');
+  }
+  
+  next();
+};
 
+app.use(httpRateLimit);
+
+// Serve static files with proper headers
+app.use(express.static('public', {
+  setHeaders: (res, path) => {
+    // Set cache control for static assets
+    res.setHeader('Cache-Control', 'max-age=86400'); // 1 day
+  }
+}));
+
+// Initialize room manager
+const roomManager = new RoomManager(logger);
+
+// Initialize socket handler
+const socketHandler = new SocketHandler(io, roomManager, logger);
+socketHandler.initialize();
+
+// Limit stats endpoint access to localhost only
 app.get('/stats', (req, res) => {
-  if (req.ip !== '::1' && req.ip !== '') {
+  const allowedIps = ['::1', '127.0.0.1']; // Only allow local access
+  
+  if (!allowedIps.includes(req.ip)) {
+    logger.warn(`Unauthorized stats access attempt from ${req.ip}`);
     return res.status(403).send('Forbidden');
   }
+  
+  // Provide minimal stats to reduce information disclosure
   res.json({
-//    connectedUsers: io.engine.clientsCount, // Logging of this level is not needed
-//    activeRooms: rooms.size, // Logging of this level is not needed
-//    rooms: getRoomStats(), // Logging of this level is not needed
     heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
     uptime: process.uptime(),
-    os: {
-      platform: process.platform,
-      arch: process.arch,
-      nodeVersion: process.version
-    },
-    date: new Date().toISOString()
+    timestamp: new Date().toISOString()
   });
-});
-
-
-// wget -qO- http://localhost:7070/stats
-// curl -X GET http://localhost:7070/stats
-
-
-//setInterval(() => {
-//  display();
-//}, 2110);
-// Display stats on server start
-//display();
-
-// Socket.io connection
-io.on('connection', (socket) => {
-  socket.data = { roomCode: null, username: null };
-
-  socket.on('createRoom', (username) => {
-    const roomCode = uuidv4().slice(0, 12);
-    socket.data.roomCode = roomCode;
-    socket.data.username = username;
-
-    rooms.set(roomCode, {
-      users: new Map([[socket.id, username]]),
-      messages: [],
-      createdAt: new Date(),
-      owner: socket.id
-    });
-
-    socket.join(roomCode);
-    socket.emit('roomCreated', {
-      roomCode,
-      users: Array.from(rooms.get(roomCode).users.values())
-    });
-  });
-
-  socket.on('joinRoom', ({ roomCode, username }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return socket.emit('error', 'Room not found');
-
-    socket.data.roomCode = roomCode;
-    socket.data.username = username;
-
-    room.users.set(socket.id, username);
-    socket.join(roomCode);
-
-    socket.emit('roomJoined', {
-      roomCode,
-      users: Array.from(room.users.values()),
-      messages: room.messages
-    });
-
-    socket.to(roomCode).emit('userJoined', {
-      username,
-      users: Array.from(room.users.values())
-    });
-  });
-
-  socket.on('sendMessage', ({ roomCode, message }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return;
-
-    const username = room.users.get(socket.id);
-    const messageObj = {
-      id: uuidv4(),
-      username,
-      text: message,
-      timestamp: new Date()
-    };
-    room.messages.push(messageObj);
-    io.to(roomCode).emit('newMessage', messageObj);
-  });
-
-  socket.on('deleteRoom', (roomCode) => {
-    const room = rooms.get(roomCode);
-    if (!room || room.owner !== socket.id) return;
-    io.to(roomCode).emit('roomDeleted', { roomCode });
-    rooms.delete(roomCode);
-  });
-
-  socket.on('disconnect', () => {
-    let { roomCode, username } = socket.data;
-    // Fallback if socket.data is not populated
-    if (!roomCode || !username) {
-      for (const [code, room] of rooms.entries()) {
-        if (room.users.has(socket.id)) {
-          roomCode = code;
-          username = room.users.get(socket.id);
-          break;
-        }
-      }
-    }
-
-    if (!roomCode || !rooms.has(roomCode)) return;
-
-    const room = rooms.get(roomCode);
-    room.users.delete(socket.id);
-    socket.leave(roomCode);
-    if (room.users.size === 0) {
-      rooms.delete(roomCode);
-    } else {
-      if (room.owner === socket.id) {
-        room.owner = Array.from(room.users.keys())[0];
-      }
-
-      io.to(roomCode).emit('userLeft', {
-        username,
-        users: Array.from(room.users.values()),
-        newOwner: room.owner
-      });
-    }
-  });
-});
-// Refer error 404 to error.html
-app.use((req, res, next) => {
-  res.status(404).sendFile(__dirname + '/public/error.html');
 });
 
 // Ensure socket.io is served from the correct path
@@ -166,6 +115,33 @@ app.get('/socket.io/socket.io.js', (req, res) => {
   res.sendFile(__dirname + '/node_modules/socket.io/client-dist/socket.io.js');
 });
 
+// Handle all other routes to prevent path traversal
+app.use((req, res, next) => {
+  res.status(404).sendFile(__dirname + '/public/error.html');
+});
 
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+  
+  // If server hasn't closed in 10 seconds, force shutdown
+  setTimeout(() => {
+    logger.error('Server shutdown timeout, forcing exit');
+    process.exit(1);
+  }, 10000);
+});
+
+// Start server on a non-default port
 const PORT = process.env.PORT || 7070;
-server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+
+server.listen(PORT, HOST, () => {
+  logger.info(`Server listening on ${HOST}:${PORT}`);
+});
+
+// Export for testing
+module.exports = { app, server, io };
