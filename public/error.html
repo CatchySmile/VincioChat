@@ -1,71 +1,59 @@
-    <!-- Error page for 404 Not Found -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 Not Found</title>
+    <title>404 Not Found - Scratchy Chat</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-        .error-container {
-            text-align: center;
-        }
-        .error-container h1 {
-            font-size: 3rem;
-            color: #6200ea;
-        }
-        .error-container p {
-            font-size: 1.5rem;
-        }
-        .error-container a {
-            text-decoration: none;
-            color: #007bff;
-        }
-        .error-container a:hover {
-            text-decoration: underline;
-        }
-        .error-container button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 1rem;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .error-container button:hover {
-            background-color: #0056b3;
-        }
-        </style>
-
-        <link rel="stylesheet" href="styles.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    </head>
-<body>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono&display=swap" rel="stylesheet">
+</head>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh;">
     <div class="error-container">
-        <h1>Page Not Found</h1>
-        <p>The page you are looking for does not exist.</p>
-        <p>Redirecting to home page in 5 seconds.</p>
-        <a href="/"><button>Go to Home</button></a>
+        <div style="position: relative; margin-bottom: 2rem;">
+            <div style="font-size: 8rem; font-weight: 800; color: var(--accent-primary); opacity: 0.15; text-align: center;">404</div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%;">
+                <i class="fas fa-ghost" style="font-size: 3rem; color: var(--accent-primary);"></i>
+                <h1 style="margin-top: 0.5rem; margin-bottom: 0;">Page Not Found</h1>
+            </div>
+        </div>
+        
+        <p>The page you're looking for doesn't exist or has been moved.</p>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 1rem 0;">
+            Click the button bellow if you dont redirect in in <span id="countdown">5</span> seconds...
+        </p>
+        
+        <div style="display: flex; justify-content: center; margin-top: 1.5rem;">
+            <a href="/" style="text-decoration: none;">
+                <button class="primary-btn" style="min-width: 160px;">
+                    <i class="fas fa-home"></i> Go to Home
+                </button>
+            </a>
+        </div>
     </div>
-<script>
-    // Redirect to home page after 5 seconds
-    setTimeout(function() {
-        window.location.href = '/';
-    }, 5000);
 
-</script>
+    <script>
+        // Countdown timer
+        let secondsLeft = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const countdownInterval = setInterval(() => {
+            secondsLeft--;
+            countdownElement.textContent = secondsLeft;
+            
+            if (secondsLeft <= 0) {
+                clearInterval(countdownInterval);
+                window.location.href = '/';
+            }
+        }, 1000);
+        
+        // Allow user to cancel redirect by hovering over the button
+        document.querySelector('.primary-btn').addEventListener('mouseenter', () => {
+            clearInterval(countdownInterval);
+            countdownElement.parentElement.textContent = 'Redirect paused. Click the button to go home.';
+        });
+    </script>
+</body>
 </html>
