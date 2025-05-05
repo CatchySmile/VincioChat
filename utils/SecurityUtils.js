@@ -1,8 +1,11 @@
 /**
- * Security utility functions for the chat application
+ * Enhanced Security utility functions for the chat application
  */
-const DOMPurify = require('dompurify');
-const { createHash } = require('crypto');
+const { JSDOM } = require('jsdom');
+const createDOMPurify = require('dompurify');
+const { window } = new JSDOM('');
+const DOMPurify = createDOMPurify(window);
+const crypto = require('crypto');
 
 class SecurityUtils {
   /**
@@ -30,6 +33,15 @@ class SecurityUtils {
   };
 
   /**
+   * Timeout values for cleanup operations
+   */
+  static TIMEOUTS = {
+    ROOM_INACTIVITY: 3600000, // 1 hour
+    SOCKET_INACTIVITY: 7200000, // 2 hours
+    TOKEN_EXPIRY: 86400000 // 24 hours
+  };
+
+  /**
    * Sanitizes text input to prevent XSS attacks
    * @param {string} text - Text to sanitize
    * @param {number} maxLength - Maximum allowed length
@@ -45,8 +57,11 @@ class SecurityUtils {
     }
     
     // Use DOMPurify for additional sanitization (removes all HTML/script tags)
-    // Note: In Node.js environment, DOMPurify requires a DOM implementation like JSDOM
-    return sanitized;
+    return DOMPurify.sanitize(sanitized, {
+      ALLOWED_TAGS: [], // No HTML tags allowed
+      ALLOWED_ATTR: [], // No attributes allowed
+      KEEP_CONTENT: true // Keep the text content
+    });
   }
 
   /**
@@ -57,29 +72,49 @@ class SecurityUtils {
    */
   static isRateLimited(ip, action) {
     const now = Date.now();
+    const key = `${ip}:${action}`;
     
-    if (!this.rateLimits.has(ip)) {
-      this.rateLimits.set(ip, {
-        messages: { count: 0, lastReset: now },
-        connections: { count: 0, lastReset: now },
-        rooms: { count: 0, lastReset: now }
+    if (!this.rateLimits.has(key)) {
+      this.rateLimits.set(key, {
+        count: 1,
+        reset: now + this.RATE_LIMIT[action.toUpperCase()].period
       });
+      return false;
     }
     
-    const limits = this.rateLimits.get(ip);
-    const actionLimit = limits[action];
+    const limit = this.rateLimits.get(key);
     
     // Reset counter if period has passed
-    if (now - actionLimit.lastReset > this.RATE_LIMIT[action.toUpperCase()].period) {
-      actionLimit.count = 0;
-      actionLimit.lastReset = now;
+    if (now >= limit.reset) {
+      limit.count = 1;
+      limit.reset = now + this.RATE_LIMIT[action.toUpperCase()].period;
+      return false;
     }
     
     // Increment counter
-    actionLimit.count++;
+    limit.count++;
     
     // Check if limit exceeded
-    return actionLimit.count > this.RATE_LIMIT[action.toUpperCase()].max;
+    const exceeded = limit.count > this.RATE_LIMIT[action.toUpperCase()].max;
+    
+    // Clean up old entries every 100 checks (approximately)
+    if (Math.random() < 0.01) {
+      this.cleanupRateLimits();
+    }
+    
+    return exceeded;
+  }
+  
+  /**
+   * Cleans up expired rate limit entries
+   */
+  static cleanupRateLimits() {
+    const now = Date.now();
+    for (const [key, limit] of this.rateLimits.entries()) {
+      if (now >= limit.reset) {
+        this.rateLimits.delete(key);
+      }
+    }
   }
 
   /**
@@ -105,31 +140,9 @@ class SecurityUtils {
     
     // Username should contain only allowed characters and be within size limit
     const sanitized = this.sanitizeText(username, this.SIZE_LIMITS.USERNAME);
-    return sanitized.length > 0;
+    return sanitized.length > 0 && /^[a-zA-Z0-9_]+$/.test(sanitized);
   }
 
-  /**
-   * Generates a CSRF token for the user session
-   * @param {string} sessionId - User's session ID
-   * @returns {string} CSRF token
-   */
-  static generateCSRFToken(sessionId) {
-    const timestamp = Date.now().toString();
-    const hash = createHash('sha256');
-    hash.update(`${sessionId}:${timestamp}:${process.env.SECRET_KEY || 'default-secret-key'}`);
-    return hash.digest('hex');
-  }
-
-  /**
-   * Validates a CSRF token
-   * @param {string} token - Token to validate
-   * @param {string} sessionId - User's session ID
-   * @returns {boolean} True if valid, false otherwise
-   */
-  static validateCSRFToken(token, sessionId, storedToken) {
-    return token === storedToken;
-  }
-  
   /**
    * Validates message content
    * @param {string} message - Message to validate
@@ -140,6 +153,115 @@ class SecurityUtils {
     
     const sanitized = this.sanitizeText(message, this.SIZE_LIMITS.MESSAGE);
     return sanitized.length > 0;
+  }
+
+  /**
+   * Generates a session token for a user
+   * @param {string} socketId - User's socket ID
+   * @param {string} roomCode - Room code
+   * @returns {string} Encrypted session token
+   */
+  static generateSessionToken(socketId, roomCode) {
+    const timestamp = Date.now();
+    const data = `${socketId}:${roomCode}:${timestamp}`;
+    return this.encrypt(data, process.env.TOKEN_SECRET || 'default-secret-key');
+  }
+
+  /**
+   * Validates a session token
+   * @param {string} token - Token to validate
+   * @param {string} socketId - User's socket ID
+   * @param {string} roomCode - Room code
+   * @returns {boolean} True if valid, false otherwise
+   */
+  static validateSessionToken(token, socketId, roomCode) {
+    try {
+      const decrypted = this.decrypt(token, process.env.TOKEN_SECRET || 'default-secret-key');
+      const [tokenSocketId, tokenRoomCode, timestamp] = decrypted.split(':');
+      
+      // Check if token is expired
+      const now = Date.now();
+      if (now - parseInt(timestamp) > this.TIMEOUTS.TOKEN_EXPIRY) return false;
+      
+      // Check if socket ID and room code match
+      return tokenSocketId === socketId && tokenRoomCode === roomCode;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Generates a CSRF token for the user session
+   * @param {string} sessionId - User's session ID
+   * @returns {string} CSRF token
+   */
+  static generateCSRFToken(sessionId) {
+    const timestamp = Date.now().toString();
+    const hash = crypto.createHash('sha256');
+    hash.update(`${sessionId}:${timestamp}:${process.env.CSRF_SECRET || 'default-csrf-secret'}`);
+    return hash.digest('hex');
+  }
+
+  /**
+   * Validates a CSRF token
+   * @param {string} token - Token to validate
+   * @param {string} sessionId - User's session ID
+   * @param {string} storedToken - Stored token to compare against
+   * @returns {boolean} True if valid, false otherwise
+   */
+  static validateCSRFToken(token, sessionId, storedToken) {
+    return token === storedToken;
+  }
+
+  /**
+   * Simple encryption function
+   * @param {string} text - Text to encrypt
+   * @param {string} key - Encryption key
+   * @returns {string} Encrypted text
+   */
+  static encrypt(text, key) {
+    // Use modern crypto methods
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-cbc', 
+      crypto.createHash('sha256').update(key).digest().slice(0, 32), iv);
+    
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    
+    // Return IV + encrypted data
+    return iv.toString('hex') + ':' + encrypted;
+  }
+
+  /**
+   * Simple decryption function
+   * @param {string} encrypted - Encrypted text
+   * @param {string} key - Decryption key
+   * @returns {string} Decrypted text
+   */
+  static decrypt(encrypted, key) {
+    try {
+      const parts = encrypted.split(':');
+      const iv = Buffer.from(parts[0], 'hex');
+      const encryptedText = parts[1];
+      
+      const decipher = crypto.createDecipheriv('aes-256-cbc',
+        crypto.createHash('sha256').update(key).digest().slice(0, 32), iv);
+      
+      let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      
+      return decrypted;
+    } catch (error) {
+      throw new Error('Decryption failed');
+    }
+  }
+
+  /**
+   * Generates a secure random room code
+   * @returns {string} Random room code
+   */
+  static generateSecureRoomCode() {
+    return crypto.randomBytes(8).toString('hex').toUpperCase().slice(0, 12);
   }
 }
 
