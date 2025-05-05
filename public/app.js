@@ -491,12 +491,45 @@ function scrollToBottom() {
   }
 }
 
-// IMPORTANT: Replace this message form submit handler with a fixed version
+let lastMessageTime = 0;
+let isCooldown = false;
+let cooldownTimeout = null;
+
 document.getElementById("message-form").addEventListener("submit", function(event) {
   event.preventDefault();
 
   const messageInput = document.getElementById("message-input");
+  const sendBtn = document.getElementById("send-btn");
   const messageText = messageInput.value.trim();
+  const currentTime = Date.now();
+  
+  // Check if cooldown period has passed (250ms)
+  if (currentTime - lastMessageTime < 250 || isCooldown) {
+    // Visual feedback for cooldown
+    sendBtn.classList.add("cooldown");
+    sendBtn.disabled = true;
+    
+    // Clear any existing timeout
+    if (cooldownTimeout) clearTimeout(cooldownTimeout);
+    
+    // Show small tooltip
+    showToast("Slow down", "info");
+    
+    // Set cooldown state
+    isCooldown = true;
+    
+    // Reset after cooldown period
+    cooldownTimeout = setTimeout(() => {
+      sendBtn.classList.remove("cooldown");
+      sendBtn.disabled = false;
+      isCooldown = false;
+    }, 250 - (currentTime - lastMessageTime) < 0 ? 250 : 250 - (currentTime - lastMessageTime));
+    
+    return;
+  }
+
+  // Update last message time
+  lastMessageTime = currentTime;
 
   // Check for invalid characters or zwj characters
   if (/[\u200B-\u200D\uFEFF]/.test(messageText)) {
@@ -523,9 +556,6 @@ document.getElementById("message-form").addEventListener("submit", function(even
   if (messageText === "") {
     showToast("Message cannot be empty.", "error");
     return;
-
-  // Add 250ms cooldown between messaging either here or enforce it via SecurityUtils
-  
   }
 
   // Check if the message is a command
@@ -563,6 +593,19 @@ document.getElementById("message-form").addEventListener("submit", function(even
       sessionToken: state.sessionToken 
     });
     messageInput.value = ""; // Clear input field
+    
+    // Apply brief cooldown visual feedback
+    sendBtn.classList.add("cooldown");
+    sendBtn.disabled = true;
+    isCooldown = true;
+    
+    // Reset after cooldown period
+    cooldownTimeout = setTimeout(() => {
+      sendBtn.classList.remove("cooldown");
+      sendBtn.disabled = false;
+      isCooldown = false;
+    }, 250);
+    
   } else if (!state.sessionToken) {
     showToast("Session expired. Please rejoin the room.", "error");
     leaveRoom();
