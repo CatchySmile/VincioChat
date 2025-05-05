@@ -1,5 +1,21 @@
-// Initialize connection
-const socket = io();
+const socket = io({
+  transports: ['polling', 'websocket'], // Allow both for compatibility
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  timeout: 20000
+});
+
+// Add these debugging listeners right after the socket initialization
+socket.on('connect', () => {
+  console.log('Connected to server with ID:', socket.id);
+});
+
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+  showToast('Failed to connect to server: ' + error.message, 'error');
+});
+
 
 // DOM Elements
 const welcomeScreen = document.getElementById('welcome-screen');
@@ -25,6 +41,18 @@ const messageInput = document.getElementById('message-input');
 const messagesContainer = document.getElementById('messages');
 const userList = document.getElementById('user-list');
 const tosLink = document.getElementById('tos-link');
+
+socket.on('connect', () => {
+  console.log('Connected to server with ID:', socket.id);
+});
+
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+  showToast('Failed to connect to server', 'error');
+});
+
+
+
 
 // Close buttons for all modals
 document.querySelectorAll('.close-modal').forEach(btn => {
@@ -73,8 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('leave-confirm-modal').querySelector('.primary-btn').addEventListener('click', confirmLeaveRoom);
   document.getElementById('leave-confirm-modal').querySelector('.danger-btn').addEventListener('click', () => toggleLeaveModal(false));
   
-  // Message form
-  messageForm.addEventListener('submit', handleSendMessage);
+  // Message form - remove this event listener
+  // messageForm.addEventListener('submit', handleSendMessage);
   
   // TOS Link
   tosLink.addEventListener('click', (e) => {
@@ -240,32 +268,42 @@ function leaveRoom() {
 
 function handleDeleteRoom() {
   if (state.isRoomOwner) {
-    socket.emit('deleteRoom', state.currentRoom);
+    socket.emit('deleteRoom', { 
+      roomCode: state.currentRoom,
+      csrfToken: state.csrfToken 
+    });
     toggleModal(usersModal, false);
   } else {
     showToast('Only the room owner can delete the room', 'error');
   }
 }
 
-function handleSendMessage(e) {
-  e.preventDefault();
-  const message = messageInput.value.trim();
+// We're not using this function, since it's covered by the second event listener
+// function handleSendMessage(e) {
+//   e.preventDefault();
+//   const message = messageInput.value.trim();
   
-  if (message && state.currentRoom) {
-    socket.emit('sendMessage', {
-      roomCode: state.currentRoom,
-      message
-    });
+//   if (message && state.currentRoom) {
+//     socket.emit('sendMessage', {
+//       roomCode: state.currentRoom,
+//       message
+//     });
+//     console.log('handleSendMessage called with state:', {
+//       currentRoom: state.currentRoom,
+//       sessionToken: state.sessionToken ? '[exists]' : '[missing]'
+//     });
     
-    messageInput.value = '';
-  }
-}
+//     messageInput.value = '';
+//   }
+// }
 
 // Socket Event Handlers
-socket.on('roomCreated', ({ roomCode, users }) => {
+socket.on('roomCreated', ({ roomCode, users, sessionToken, csrfToken }) => {
   state.currentRoom = roomCode;
   state.isRoomOwner = true;
   state.users = users;
+  state.sessionToken = sessionToken;
+  state.csrfToken = csrfToken;
   
   roomCodeDisplay.textContent = roomCode;
   navigateTo('chat-room');
@@ -274,10 +312,15 @@ socket.on('roomCreated', ({ roomCode, users }) => {
   showToast('Room created successfully!', 'success');
 });
 
-socket.on('roomJoined', ({ roomCode, users, messages }) => {
+socket.on('roomJoined', ({ roomCode, users, messages, sessionToken, csrfToken, isRoomOwner }) => {
+  console.log('Room joined with session token:', sessionToken ? 'present' : 'missing');
+  
   state.currentRoom = roomCode;
   state.users = users;
-  
+  state.sessionToken = sessionToken;
+  state.csrfToken = csrfToken;
+  state.isRoomOwner = isRoomOwner || false;
+  state.lastActivity = Date.now();
   roomCodeDisplay.textContent = roomCode;
   navigateTo('chat-room');
   
@@ -423,6 +466,7 @@ function scrollToBottom() {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
+// IMPORTANT: Replace this message form submit handler with a fixed version
 document.getElementById("message-form").addEventListener("submit", function(event) {
   event.preventDefault();
 
@@ -435,6 +479,7 @@ document.getElementById("message-form").addEventListener("submit", function(even
     showToast("Message contains invalid characters.", "error");
     return;
   }
+  
   // Check for excessive whitespace
   if (messageText.split(/\s+/).length > 30) {
     messageInput.value = "";
@@ -448,36 +493,12 @@ document.getElementById("message-form").addEventListener("submit", function(even
     showToast("Message cannot exceed 500 characters.", "error");
     return;
   }
+  
   // Check if message is empty
   if (messageText === "") {
     showToast("Message cannot be empty.", "error");
     return;
   }
-  // Force delay between messages
-  const lastMessageTime = parseInt(localStorage.getItem("lastMessageTime")) || 0;
-  const currentTime = Date.now();
-  if (currentTime - lastMessageTime < 350) {
-    messageInput.value = "";
-    showToast("You are sending messages over the rate limit. Please wait a moment.", "error");
-    return;
-  }
-  // Update last message time
-  localStorage.setItem("lastMessageTime", currentTime);
-
-  // Cap messages per minute
-  const messageCount = parseInt(localStorage.getItem("messageCount")) || 0;
-  if (messageCount >= 60) {
-    messageInput.value = "";
-    showToast("You are sending messages over the rate limit. Please wait a moment.", "error");
-    return;
-  }
-
-  // Update message count
-  localStorage.setItem("messageCount", messageCount + 1);
-  // Reset message count after 30 seconds
-  setTimeout(() => {
-    localStorage.setItem("messageCount", 0);
-  }, 30000);
 
   // Check if the message is a command
   if (messageText.startsWith("/")) {
@@ -487,27 +508,40 @@ document.getElementById("message-form").addEventListener("submit", function(even
     if (command === "clear") {
       messagesContainer.innerHTML = "";
       showToast("Chat cleared", "info");
+      messageInput.value = "";
       return;
     // leave command
     } else if (command === "leave") {
       leaveRoom();
+      messageInput.value = "";
       return;
       // help command
     } else if (command === "help") {
       showToast("Available commands: /clear, /help", "info");
+      messageInput.value = "";
       return;
     } else {
       showToast("Unknown command", "error");
+      messageInput.value = "";
       return;
     }
   }
 
-  // Send message if it's within the limit
-  socket.emit("sendMessage", { roomCode: currentRoomCode, message: messageText });
-  messageInput.value = ""; // Clear input field
+  // Send message if it's within the limit - FIXED: using state.currentRoom instead of currentRoomCode
+  if (state.currentRoom && state.sessionToken) {
+    socket.emit("sendMessage", { 
+      roomCode: state.currentRoom, 
+      message: messageText,
+      sessionToken: state.sessionToken 
+    });
+    messageInput.value = ""; // Clear input field
+  } else if (!state.sessionToken) {
+    showToast("Session expired. Please rejoin the room.", "error");
+    leaveRoom();
+  } else {
+    showToast("You're not in a room.", "error");
+  }
 });
-
-
 
 function showToast(message, type = 'info') {
   const toastContainer = document.getElementById('toast-container');
