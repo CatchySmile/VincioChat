@@ -63,7 +63,7 @@ const httpRateLimit = (req, res, next) => {
   // Skip rate limiting for static assets
   if (req.path.startsWith('/public/') || 
       req.path.startsWith('/styles/') || 
-      req.path.startsWith('/js/')) {
+      req.path.startsWith('/public/')) {
     return next();
   }
   
