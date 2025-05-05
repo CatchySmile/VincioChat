@@ -931,3 +931,27 @@ a:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(138, 84, 253, 0.25);
 }
+/* Add this to the CSS file for the cooldown effect */
+#send-btn.cooldown {
+  opacity: 0.7;
+  transform: scale(0.95);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  animation: cooldownPulse 0.10s ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes cooldownPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.92);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
