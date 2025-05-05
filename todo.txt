@@ -1,2 +1,3 @@
 Apply ratelimit so we cant send more then 40 messages per minute, it currently doesnt work.
 Limit messages to enforce a 250ms cooldown to avoid spam.
+Add some sort of settings menu or panel...
