@@ -101,9 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('leave-confirm-modal').querySelector('.primary-btn').addEventListener('click', confirmLeaveRoom);
   document.getElementById('leave-confirm-modal').querySelector('.danger-btn').addEventListener('click', () => toggleLeaveModal(false));
   
-  // Message form - remove this event listener
-  // messageForm.addEventListener('submit', handleSendMessage);
-  
   // TOS Link
   tosLink.addEventListener('click', (e) => {
     e.preventDefault();
@@ -278,25 +275,6 @@ function handleDeleteRoom() {
   }
 }
 
-// We're not using this function, since it's covered by the second event listener
-// function handleSendMessage(e) {
-//   e.preventDefault();
-//   const message = messageInput.value.trim();
-  
-//   if (message && state.currentRoom) {
-//     socket.emit('sendMessage', {
-//       roomCode: state.currentRoom,
-//       message
-//     });
-//     console.log('handleSendMessage called with state:', {
-//       currentRoom: state.currentRoom,
-//       sessionToken: state.sessionToken ? '[exists]' : '[missing]'
-//     });
-    
-//     messageInput.value = '';
-//   }
-// }
-
 // Socket Event Handlers
 socket.on('roomCreated', ({ roomCode, users, sessionToken, csrfToken }) => {
   state.currentRoom = roomCode;
@@ -308,8 +286,14 @@ socket.on('roomCreated', ({ roomCode, users, sessionToken, csrfToken }) => {
   roomCodeDisplay.textContent = roomCode;
   navigateTo('chat-room');
   
-  addSystemMessage(`Room created with code: ${roomCode}`);
-  showToast('Room created successfully!', 'success');
+  // Add the centered small system notification (not the large one)
+  const li = document.createElement('li');
+  li.classList.add('system-message');
+  li.textContent = `Room created with code: ${roomCode}`;
+  messagesContainer.appendChild(li);
+  
+  // Also show a toast notification
+  showToast(`Room created with code: ${roomCode}`, 'success');
 });
 
 socket.on('roomJoined', ({ roomCode, users, messages, sessionToken, csrfToken, isRoomOwner }) => {
@@ -327,14 +311,28 @@ socket.on('roomJoined', ({ roomCode, users, messages, sessionToken, csrfToken, i
   // Display existing messages
   messages.forEach(msg => addMessage(msg));
   
-  addSystemMessage(`You joined room: ${roomCode}`);
-  showToast('Room joined successfully!', 'success');
+  // Add the centered small system notification (not the large one)
+  const li = document.createElement('li');
+  li.classList.add('system-message');
+  li.textContent = `You joined room: ${roomCode}`;
+  messagesContainer.appendChild(li);
+  
+  // Also show a toast notification
+  showToast(`You joined room: ${roomCode}`, 'success');
 });
 
 socket.on('userJoined', ({ username, users }) => {
   state.users = users;
-  addSystemMessage(`${username} joined the room`);
   updateUsersList();
+  
+  // Add the centered small system notification (not the large one)
+  const li = document.createElement('li');
+  li.classList.add('system-message');
+  li.textContent = `${username} joined the room`;
+  messagesContainer.appendChild(li);
+  
+  // Also show a toast notification
+  showToast(`${username} joined the room`, 'info');
 });
 
 socket.on('userLeft', ({ username, users, newOwner }) => {
@@ -346,8 +344,16 @@ socket.on('userLeft', ({ username, users, newOwner }) => {
     showToast('You are now the room owner', 'info');
   }
   
-  addSystemMessage(`${username} left the room`);
   updateUsersList();
+  
+  // Add the centered small system notification (not the large one)
+  const li = document.createElement('li');
+  li.classList.add('system-message');
+  li.textContent = `${username} left the room`;
+  messagesContainer.appendChild(li);
+  
+  // Also show a toast notification
+  showToast(`${username} left the room`, 'info');
 });
 
 socket.on('newMessage', (message) => {
@@ -416,6 +422,11 @@ function updateUsersList() {
 }
 
 function addMessage(message) {
+  // Filter out system messages (that have "System" as username)
+  if (message.username === "System") {
+    return; // Skip rendering these messages
+  }
+
   const li = document.createElement('li');
   
   // Format timestamp
@@ -452,9 +463,16 @@ function addMessage(message) {
   scrollToBottom();
 }
 
+// Keep this function for /commands and other system notifications that might be needed
 function addSystemMessage(text) {
   const li = document.createElement('li');
   li.classList.add('system-message');
+  
+  // Check if it's a command message to apply special styling
+  if (text.startsWith('/')) {
+    li.classList.add('command-message');
+  }
+  
   li.textContent = text;
   messagesContainer.appendChild(li);
   
@@ -463,7 +481,14 @@ function addSystemMessage(text) {
 }
 
 function scrollToBottom() {
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  const messagesContainer = document.getElementById('messages-container');
+  if (messagesContainer) {
+    // Use smooth scrolling behavior
+    messagesContainer.scrollTo({
+      top: messagesContainer.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
 }
 
 // IMPORTANT: Replace this message form submit handler with a fixed version
@@ -549,7 +574,32 @@ function showToast(message, type = 'info') {
   // Create toast element
   const toast = document.createElement('div');
   toast.classList.add('toast', type);
-  toast.textContent = message;
+  
+  // Create icon based on toast type
+  const icon = document.createElement('i');
+  icon.style.marginRight = '8px';
+  
+  switch(type) {
+    case 'success':
+      icon.className = 'fas fa-check-circle';
+      icon.style.color = 'var(--success)';
+      break;
+    case 'error':
+      icon.className = 'fas fa-exclamation-circle';
+      icon.style.color = 'var(--danger)';
+      break;
+    default:
+      icon.className = 'fas fa-info-circle';
+      icon.style.color = 'var(--accent-primary)';
+  }
+  
+  // Create message text element
+  const messageText = document.createElement('span');
+  messageText.textContent = message;
+  
+  // Add elements to toast
+  toast.appendChild(icon);
+  toast.appendChild(messageText);
   
   // Add to container
   toastContainer.appendChild(toast);
@@ -557,8 +607,11 @@ function showToast(message, type = 'info') {
   // Auto-remove after 3 seconds
   setTimeout(() => {
     toast.style.opacity = '0';
+    toast.style.transform = 'translateX(20px)';
     setTimeout(() => {
-      toastContainer.removeChild(toast);
+      if (toast.parentNode === toastContainer) {
+        toastContainer.removeChild(toast);
+      }
     }, 300);
   }, 3000);
 }
