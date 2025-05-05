@@ -1,116 +1,289 @@
 <!DOCTYPE html>
 <html lang="en">
-<div">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Scratchy Chat - Legal Information</title>
-    <link rel="stylesheet" href="./styles/legal.css"> 
+    <title>Scratchy Chat Room</title>
+    <link rel="stylesheet" href="./styles/dark.css">
     <link rel="stylesheet" href="./styles/settings.css">
     <link rel="stylesheet" href="./styles/themes.css">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono&display=swap" rel="stylesheet">
-
 </head>
-
 <body>
-    <header>
-        <div class="">
-            <h1 class="card">
-                <i class="fas fa-shield-alt" style="color: var(--accent-primary); margin-right: 0.5rem;"></i> 
-                Scratchy Chat Legal Information
-            </h1>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen">
+            <h1>Scratchy Chat</h1>
+            <div class="input-group">
+                <label for="username-input">Choose a username</label>
+                <input type="text" id="username-input" placeholder="Enter username" maxlength="20">
             </div>
-    </header>
+            <button id="continue-btn" class="primary-btn">
+                <i class="fas fa-arrow-right"></i> Continue
+            </button>
+            <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+                By continuing, you agree to our
+                <a href="#" id="tos-link">Terms of Service & Privacy Policy</a>
+            </p>
+        </div>
 
-    <div>
-        <main>
-            <section style="margin-bottom: 2rem;">
-                <h2><i class="fas fa-user-shield" style="margin-right: 0.5rem;"></i> Privacy & Data Handling</h2>
-                <p>
-                    Scratchy Chat is a web-based chat room application built primarily for temporary, real-time communication. All interactions within the application, such as room creation, messages, and user details, are handled solely in-memory and are not stored permanently. Once a user session ends, all data including chat messages and room details are cleared and cannot be recovered.
+        
+        <!-- Room Selection Screen -->
+        <div id="room-selection" class="hidden">
+            <div class="card">
+                <h3><i class="fas fa-plus-circle"></i> Create a New Room</h3>
+                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    Start a new chat room and invite others to chat
                 </p>
-
-                <h3><i class="fas fa-database" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 1. No Permanent Data Storage</h3>
-                <p>
-                    Scratchy Chat does not retain any information from the chat rooms, users, or messages beyond the duration of the session. All data, including chat logs and user participation, exists only temporarily in the server's memory. No permanent storage is employed, and no data is logged for future reference or analysis. No third-party services are used to store or process user data. The application is designed to ensure that all interactions are transient and ephemeral, with no long-term data retention policies in place.
+                <button id="create-room-btn" class="primary-btn">Create Room</button>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-sign-in-alt"></i> Join Existing Room</h3>
+                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
                 </p>
+                
+                <div class="input-group">
+                    <input type="text" id="room-code-input" placeholder="Enter 12-digit room code" maxlength="12">
+                </div>
+                <button id="join-room-btn" class="primary-btn">Join Room</button>
+            </div>
+        </div>
 
-                <h3><i class="fas fa-trash-alt" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 2. Data Deletion Upon Room Deletion</h3>
-                <p>
-                    When a room is deleted, all associated messages and user data are permanently erased. Once this deletion occurs, the data cannot be recovered by any means. Scratchy Chat operates under the assumption that all chat rooms are ephemeral and will not store any form of user data beyond the active session.
-                </p>
-
-                <h3><i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 3. Session and Room Lifetime</h3>
-                <p>
-                    A room's lifespan is determined by its users. The room and its messages will exist only for as long as the users are connected. If no users are present, the room will be deleted automatically after a certain period of inactivity. This ensures that no residual data remains on the server after the last user leaves or room owner deletes the room.
-                </p>
-
-                <h3><i class="fas fa-user-secret" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 4. No User Authentication</h3>
-                <p>
-                    Scratchy Chat does not require any user authentication, accounts, or personally identifiable information (PII) to use the platform. Users are identified solely by their session and room codes. All sessions and rooms exist temporarily in memory during the active session. No chat data is logged or stored in any way.
-                </p>
-
-                <h3><i class="fas fa-cookie-bite" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 5. Cookies and Tracking</h3>
-                <p>
-                    Scratchy Chat does not use cookies, web beacons, or any form of user tracking. No browsing data, device identifiers, or session analytics are collected or stored by us.
-                </p>
-                <h3><i class="fas fa-cookie-bite" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 6. User configuration</h3>
-                <p>
-                    All user configuration, as in themes, settings, or similar is stored via that individuals local browser and is not logged, stored, or processed on the server.
-                </p>
-            </section>
-
-            <section style="margin-bottom: 2rem;">
-                <h2><i class="fas fa-file-contract" style="margin-right: 0.5rem;"></i> Terms of Service</h2>
-                <p>
-                    By using Scratchy Chat, you agree to the following terms:
-                </p>
-                <ul>
-                    <li>Scratchy Chat is provided "as-is" for personal and experimental use only.</li>
-                    <li>Scratchy Chat is not intended for production or business use.</li>
-                    <li>We do not guarantee the availability or reliability of the service.</li>
-                    <li>We reserve the right to suspend or terminate access to Scratchy Chat at any time without notice.</li>
-                </ul>
-
-                <h3><i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Limitation of Liability</h3>
-                <p>
-                    Scratchy Chat and its developers will not be liable for any loss, damage, or inconvenience arising from the use of this service, including, but not limited to, data loss, interruptions in service, or unauthorized access to information.
-                </p>
-
-                <h3><i class="fas fa-shield-alt" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Indemnity</h3>
-                <p>
-                    By using Scratchy Chat, you agree to indemnify and hold harmless the creators, developers, and administrators of Scratchy Chat from any claims, damages, or losses resulting from your use of the service.
-                </p>
-
-                <h3><i class="fas fa-sync-alt" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Changes to this Policy</h3>
-                <p>
-                    We may update these legal terms from time to time. All changes will be reflected on this page, and the updated version will be effective immediately upon posting. Please check this page regularly for any updates.
-                </p>
-
-                <h3><i class="fas fa-gavel" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Governing Law</h3>
-                <p>
-                    These Terms and the use of Scratchy Chat are governed by the laws of the jurisdiction in which the service chooses. Any legal actions or proceedings related to this service must be brought in the courts located in the appropriate jurisdiction.
-                </p>
-            </section>
-
-            <section style="margin-bottom: 2rem; background-color: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <h2><i class="fas fa-envelope" style="margin-right: 0.5rem;"></i> Contact Us</h2>
-                <p style="margin-bottom: 0;">
-                    If you have any questions about legal information or need assistance, feel free to contact us at 
-                    <a href="mailto:ScratchySupport@proton.me" style="color: var(--accent-primary); font-weight: 500;">ScratchySupport@proton.me</a>.
-                </p>
-            </section>
-        </main>
-
-        <footer style="text-align: center; padding: 1.5rem; color: var(--text-secondary); border-top: 1px solid var(--border-color); margin-top: 2rem; width: 100%;">
-            <p>&copy; 2025 Scratchy Chat - All Rights Reserved.</p>
-        </footer>
-
+        <!-- Chat Room Screen -->
+        <div id="chat-room" class="hidden">
+            <div class="chat-header">
+                <h2>Room: <span class="span" id="room-code-display"></span></h2>
+                <div class="chat-controls">
+                    <button id="settings-btn" class="icon-btn" title="Settings">
+                      <i class="fas fa-cog"></i>
+                    </button>
+                    <button id="copy-room-code" class="icon-btn" title="Copy room code">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button id="show-users-btn" class="icon-btn" title="Show users">
+                        <i class="fas fa-users"></i>
+                    </button>
+                    <button id="leave-room-btn" class="icon-btn warning" title="Leave room">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                    
+                </div>
+            </div>
+            <div class="chat-content">
+                <div id="messages-container">
+                    <ul id="messages"></ul>
+                </div>
+            </div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
+                <button type="submit" id="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
     </div>
+
+    <!-- User List Modal -->
+    <div id="users-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-users"></i> Users in Room</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <ul id="user-list"></ul>
+            <div class="modal-footer admin-controls hidden">
+                <button id="delete-room-btn" class="danger-btn">
+                    <i class="fas fa-trash-alt"></i> Delete Room
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Room Confirmation Modal -->
+    <div id="leave-confirm-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> Leave Room?</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to leave the chat room?</p>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                    You won't be able to see any new messages after leaving.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn">Yes, Leave</button>
+                <button class="danger-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOS Modal -->
+    <div id="tos-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Terms & Privacy</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 300px; overflow-y: auto;">
+                <div>
+                    <h4 style="margin-bottom: 0.8rem; color: var(--accent-primary);">Privacy Policy</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>We do not store chat logs, IP addresses, or any identifying data. Everything is kept in memory only during the session.</span>
+                        </li>
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>When a room is deleted, all messages and information are permanently erased.</span>
+                        </li>
+                    </ul>
+                    
+                    <h4 style="margin: 1.2rem 0 0.8rem; color: var(--accent-primary);">Terms of Service</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-exclamation-circle" style="color: var(--warning); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>By using Scratchy Chat, you agree not to misuse the platform. Abuse or illegal activity are not tolerated.</span>
+                        </li>
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-exclamation-circle" style="color: var(--warning); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>Scratchy Chat is provided "as-is" for personal and experimental use only.</span>
+                        </li>
+                    </ul>
+                        
+                    <!-- Legal Information Button -->
+                    <div style="text-align: center; margin-top: 1.5rem;">
+                        <a href="/legal.html" target="_blank" class="primary-btn" 
+                           style="text-decoration: none; display: inline-block; padding: 0.6rem 1.2rem; width: auto;">
+                           <i class="fas fa-gavel"></i> Full Legal Information
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn" id="close-tos-btn">
+                    <i class="fas fa-check"></i> I Understand
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Help Modal -->
+    <div id="command-help-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-terminal"></i> Available Commands</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/help</code>
+                        <p style="margin-top: 0.5rem;">Display available commands</p>
+                    </li>
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/clear</code>
+                        <p style="margin-top: 0.5rem;">Clear your chat history (only for you)</p>
+                    </li>
+                    <li style="margin-bottom: 1rem;">
+                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/leave</code>
+                        <p style="margin-top: 0.5rem;">Leave the current room</p>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn" id="close-command-help-btn">Got it</button>
+            </div>
+        </div>
+    </div>
+
+<!-- Enhanced Settings Modal -->
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-cog"></i> Settings</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Theme Settings -->
+        <div class="settings-section theme">
+          <h4>Theme</h4>
+          <div class="settings-option">
+            <label for="theme-select">Choose Theme:</label>
+            <select id="theme-select">
+              <option value="dark">Dark</option>
+              <option value="material">Material</option>
+              <option value="light">Light</option>
+              <option value="blackred">Midnight Red</option>
+              <option value="mint">Mint</option>
+              <option value="matrix">Matrix</option>
+
+
+            </select>
+          </div>
+          <div class="settings-option">
+            <label for="accent-color-select">Accent Color:</label>
+            <select id="accent-color-select">
+              <option value="purple">Purple</option>
+              <option value="black">Black</option>
+              <option value="blue">Blue</option>
+              <option value="red">Red</option>
+              <option value="green">Green</option>
+              <option value="pink">Pink</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Notification Settings -->
+        <div class="settings-section notifications">
+          <h4>Notifications</h4>
+          <div class="settings-option">
+            <label for="notification-toggle">Enable sound [Not implemented</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notification-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="settings-option">
+            <label for="toast-duration-select">Toast Duration:</label>
+            <select id="toast-duration-select">
+              <option value="500">Fast (0.5s)</option>
+              <option value="2000">Short (2s)</option>
+              <option value="3000" selected>Normal (3s)</option>
+              <option value="5000">Long (5s)</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Message Settings -->
+        <div class="settings-section messages">
+          <h4>Messages</h4>
+          <div class="settings-option">
+            <label for="message-timestamp-toggle">Show timestamps</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="message-timestamp-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="primary-btn" id="save-settings-btn">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Load Socket.IO client from CDN (for development) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+    <script src="settings.js"></script>
 </body>
-</div>
 </html>
