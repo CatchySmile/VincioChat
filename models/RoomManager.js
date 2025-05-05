@@ -1,12 +1,10 @@
 /**
- * Manages all chat rooms and their associated data
+ * Manages all chat rooms and their associated data with enhanced security
  */
-const { v4: uuidv4 } = require('uuid');
-const Room = require('../models/Room');
-const Message = require('../models/Message');
-const User = require('../models/User');
-const SecurityUtils = require('/utils/SecurityUtils');
-
+const Room = require('./Room');
+const Message = require('./Message');
+const User = require('./User');
+const SecurityUtils = require('../utils/SecurityUtils');
 class RoomManager {
   constructor(logger) {
     this.rooms = new Map();
@@ -17,27 +15,27 @@ class RoomManager {
   }
   
   /**
-   * Creates a new chat room
+   * Creates a new chat room with secure room code generation
    * @param {string} ownerId - Socket ID of the room creator
    * @param {string} ownerName - Username of the room creator
    * @param {string} ip - IP address of the creator (for rate limiting)
    * @returns {Room} The newly created room
    */
   createRoom(ownerId, ownerName, ip) {
-    // Generate a short but unique room code
+    // Generate a short but unique room code using secure random generation
     let roomCode;
     do {
-      roomCode = uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase();
+      roomCode = SecurityUtils.generateSecureRoomCode();
     } while (this.rooms.has(roomCode));
     
-    // Create owner as first user
+    // Create owner as first user with properly sanitized username
     const owner = new User(ownerId, ownerName, ip);
     
     // Create the room
     const room = new Room(roomCode, owner);
     this.rooms.set(roomCode, room);
     
-    this.logger.info(`Room created: ${roomCode} by ${ownerName} (${ownerId})`);
+    this.logger.info(`Room created: ${roomCode} by ${owner.username} (${ownerId})`);
     return room;
   }
   
@@ -47,23 +45,25 @@ class RoomManager {
    * @param {string} userId - Socket ID of the joining user
    * @param {string} username - Username of the joining user
    * @param {string} ip - IP address of the user
-   * @returns {Object} Room data or null if room doesn't exist
+   * @returns {Object} Room data or null if room doesn't exist or is full
    */
   joinRoom(roomCode, userId, username, ip) {
-    const room = this.getRoom(roomCode);
+    // Normalize room code for case-insensitive matching
+    const normalizedCode = roomCode.toUpperCase();
+    
+    const room = this.getRoom(normalizedCode);
     if (!room) return null;
     
-    // Check user limit (prevent DoS by room filling)
-    if (room.users.size >= 50) {
-      this.logger.warn(`Room ${roomCode} has reached maximum user capacity`);
+    // Create and add the user
+    const user = new User(userId, username, ip);
+    const added = room.addUser(user);
+    
+    if (!added) {
+      this.logger.warn(`Room ${normalizedCode} has reached maximum user capacity`);
       return null;
     }
     
-    const user = new User(userId, username, ip);
-    room.addUser(user);
-    room.lastActivity = Date.now();
-    
-    this.logger.info(`User ${username} (${userId}) joined room: ${roomCode}`);
+    this.logger.info(`User ${user.username} (${userId}) joined room: ${normalizedCode}`);
     return room;
   }
   
@@ -86,7 +86,6 @@ class RoomManager {
         
         // Remove user from room
         room.removeUser(userId);
-        room.lastActivity = Date.now();
         
         // If this was the owner, assign a new one if possible
         let newOwnerId = null;
@@ -115,7 +114,7 @@ class RoomManager {
     
     return null;
   }
-  // Duplicate username check
+  
   /**
    * Checks if a username is already taken in a room
    * @param {string} roomCode - Code of the room
@@ -126,16 +125,17 @@ class RoomManager {
     const room = this.getRoom(roomCode);
     if (!room) return false;
     
+    // Sanitize username for consistent comparison
+    const sanitizedUsername = SecurityUtils.sanitizeText(username, SecurityUtils.SIZE_LIMITS.USERNAME);
+    
     for (const user of room.users.values()) {
-      if (user.username === username) {
+      if (user.username.toLowerCase() === sanitizedUsername.toLowerCase()) {
         return true;
       }
     }
     
     return false;
   }
-
-
 
   /**
    * Adds a message to a room
@@ -151,17 +151,22 @@ class RoomManager {
     const user = room.getUser(userId);
     if (!user) return null;
     
-    // Validate message length
-    if (text.length > SecurityUtils.SIZE_LIMITS.MESSAGE) {
-      text = text.substring(0, SecurityUtils.SIZE_LIMITS.MESSAGE);
-    }
+    // Validate and sanitize message content
+    const sanitizedText = SecurityUtils.sanitizeText(text, SecurityUtils.SIZE_LIMITS.MESSAGE);
+    if (!sanitizedText) return null;
     
-    const message = new Message(uuidv4(), user.username, text);
+    // Generate a secure unique ID for the message
+    const messageId = require('crypto').randomUUID();
+    
+    const message = new Message(messageId, user.username, sanitizedText);
     room.addMessage(message);
-    room.lastActivity = Date.now();
+    
+    // Update user activity
+    user.updateActivity();
     
     return message;
   }
+  
   /**
    * Adds a system message to a room
    * @param {string} roomCode - Code of the room
@@ -172,9 +177,14 @@ class RoomManager {
     const room = this.getRoom(roomCode);
     if (!room) return null;
     
-    const message = new Message(uuidv4(), 'System', text);
+    // Sanitize even system messages
+    const sanitizedText = SecurityUtils.sanitizeText(text, SecurityUtils.SIZE_LIMITS.MESSAGE);
+    
+    // Generate a secure unique ID for the message
+    const messageId = require('crypto').randomUUID();
+    
+    const message = new Message(messageId, 'System', sanitizedText);
     room.addMessage(message);
-    room.lastActivity = Date.now();
     
     return message;
   }
@@ -188,7 +198,7 @@ class RoomManager {
     if (!this.rooms.has(roomCode)) return false;
     
     const room = this.rooms.get(roomCode);
-    logger.info(`Room deleted: ${roomCode} (had ${room.users.size} users and ${room.messages.length} messages)`);
+    this.logger.info(`Room deleted: ${roomCode} (had ${room.users.size} users and ${room.messages.length} messages)`);
     
     this.rooms.delete(roomCode);
     return true;
@@ -242,48 +252,26 @@ class RoomManager {
    */
   initializeCleanupSchedule() {
     const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
-    const ROOM_EXPIRY = 1 * 60 * 60 * 1000; // 1 hours
+    const ROOM_EXPIRY = SecurityUtils.TIMEOUTS.ROOM_INACTIVITY; // From security utils
     
     setInterval(() => {
       const now = Date.now();
       let deletedCount = 0;
       
       for (const [roomCode, room] of this.rooms.entries()) {
-        const inactiveTime = now - room.lastActivity;
-        
-        if (inactiveTime > ROOM_EXPIRY) {
+        if (room.isInactive(ROOM_EXPIRY)) {
           this.rooms.delete(roomCode);
           deletedCount++;
-          logger.info(`Room ${roomCode} deleted due to inactivity (${Math.round(inactiveTime / 3600000)} hours)`);
+          this.logger.info(`Room ${roomCode} deleted due to inactivity (${Math.round((now - room.lastActivity) / 3600000)} hours)`);
         }
       }
       
       if (deletedCount > 0) {
-        logger.info(`Cleanup: Deleted ${deletedCount} inactive rooms. ${this.rooms.size} rooms remaining.`);
+        this.logger.info(`Cleanup: Deleted ${deletedCount} inactive rooms. ${this.rooms.size} rooms remaining.`);
       }
     }, CLEANUP_INTERVAL);
     
-    logger.info('Room cleanup schedule initialized');
-  }
-}
-
-// Force cleanup on startup
-const roomManager = new RoomManager();
-roomManager.initializeCleanupSchedule();
-// Clear all rooms on startup
-for (const roomCode of roomManager.rooms.keys()) {
-  roomManager.deleteRoom(roomCode);
-  logger.info(`Room ${roomCode} cleared on startup`);
-}
-
-// Sanitize rooms
-for (const room of roomManager.rooms.values()) {
-  for (const user of room.users.values()) {
-    user.username = SecurityUtils.sanitizeText(user.username, SecurityUtils.SIZE_LIMITS.USERNAME);
-  }
-  
-  for (const message of room.messages) {
-    message.text = SecurityUtils.sanitizeText(message.text, SecurityUtils.SIZE_LIMITS.MESSAGE);
+    this.logger.info('Room cleanup schedule initialized');
   }
 }
 
