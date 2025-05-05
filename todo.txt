@@ -1,2 +1,3 @@
 toggleCommandHelpModal needs to be fixed so our command help modal shows instead of the toast.
-Kicking users doesnt work and needs proper validation.
+Kicking users doesnt work and needs proper validation and authentication.
+
