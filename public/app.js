@@ -42,9 +42,6 @@ const messageInput = document.getElementById('message-input');
 const messagesContainer = document.getElementById('messages');
 const userList = document.getElementById('user-list');
 const tosLink = document.getElementById('tos-link');
-const settingsBtn = document.getElementById('settings-btn');
-const settingsModal = document.getElementById('settings-modal');
-const saveSettingsBtn = document.getElementById('save-settings-btn');
 
 
 
@@ -632,65 +629,6 @@ function addMessage(message) {
   // Scroll to bottom
   scrollToBottom();
 }
-
-
-settingsBtn.addEventListener('click', () => toggleModal(settingsModal, true));
-saveSettingsBtn.addEventListener('click', saveSettings);
-
-// Function to save settings
-function saveSettings() {
-  // Get settings values
-  const theme = document.getElementById('theme-select').value;
-  const notificationsEnabled = document.getElementById('notification-toggle').checked;
-  const showTimestamps = document.getElementById('message-timestamp-toggle').checked;
-  
-  // Save settings to localStorage
-  const settings = {
-    theme,
-    notificationsEnabled,
-    showTimestamps
-  };
-  localStorage.setItem('scratchyChatSettings', JSON.stringify(settings));
-  
-  // Apply settings
-  applySettings(settings);
-  
-  // Close modal
-  toggleModal(settingsModal, false);
-  showToast('Settings saved', 'success');
-}
-
-// Function to apply settings
-function applySettings(settings) {
-  // Apply theme
-  document.body.className = settings.theme === 'light' ? 'light-theme' : '';
-  
-  // Apply timestamp visibility
-  const timestamps = document.querySelectorAll('.timestamp');
-  timestamps.forEach(timestamp => {
-    timestamp.style.display = settings.showTimestamps ? 'block' : 'none';
-  });
-}
-
-// Load settings on startup
-function loadSettings() {
-  const savedSettings = localStorage.getItem('scratchyChatSettings');
-  if (savedSettings) {
-    const settings = JSON.parse(savedSettings);
-    
-    // Set form values
-    document.getElementById('theme-select').value = settings.theme;
-    document.getElementById('notification-toggle').checked = settings.notificationsEnabled;
-    document.getElementById('message-timestamp-toggle').checked = settings.showTimestamps;
-    
-    // Apply settings
-    applySettings(settings);
-  }
-}
-
-// Call loadSettings when DOM is loaded
-document.addEventListener('DOMContentLoaded', loadSettings);
-
 
 
 // Keep this function for /commands and other system notifications that might be needed
