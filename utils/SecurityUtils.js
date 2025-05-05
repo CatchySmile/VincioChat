@@ -18,9 +18,9 @@ class SecurityUtils {
    * Rate limit constants
    */
   static RATE_LIMIT = {
-    MESSAGES: { max: 200, period: 60000 }, // 20 messages per minute
-    CONNECTIONS: { max: 100, period: 60000 }, // 10 connections per minute
-    ROOMS: { max: 30, period: 300000 } // 3 rooms per 5 minutes
+    MESSAGES: { max: 40, period: 60000 }, // 40 messages per minute
+    CONNECTIONS: { max: 20, period: 60000 }, // 20 connections per minute
+    ROOMS: { max: 10, period: 300000 } // 10 rooms per 5 minutes
   };
 
   /**
@@ -47,6 +47,7 @@ class SecurityUtils {
    * @param {number} maxLength - Maximum allowed length
    * @returns {string} Sanitized text
    */
+
   static sanitizeText(text, maxLength) {
     if (!text || typeof text !== 'string') return '';
     
@@ -56,11 +57,13 @@ class SecurityUtils {
       sanitized = sanitized.slice(0, maxLength);
     }
     
-    // Use DOMPurify for additional sanitization (removes all HTML/script tags)
+    // Use DOMPurify with stricter configuration
     return DOMPurify.sanitize(sanitized, {
       ALLOWED_TAGS: [], // No HTML tags allowed
       ALLOWED_ATTR: [], // No attributes allowed
-      KEEP_CONTENT: true // Keep the text content
+      KEEP_CONTENT: true, // Keep the text content
+      FORBID_TAGS: ['style', 'script', 'iframe', 'form', 'object', 'embed', 'link'],
+      FORBID_ATTR: ['style', 'onerror', 'onload', 'onmouseover', 'onmouseout', 'onclick']
     });
   }
 
