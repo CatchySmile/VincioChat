@@ -523,6 +523,9 @@ document.getElementById("message-form").addEventListener("submit", function(even
   if (messageText === "") {
     showToast("Message cannot be empty.", "error");
     return;
+
+  // Add 250ms cooldown between messaging either here or enforce it via SecurityUtils
+  
   }
 
   // Check if the message is a command
@@ -542,7 +545,7 @@ document.getElementById("message-form").addEventListener("submit", function(even
       return;
       // help command
     } else if (command === "help") {
-      showToast("Available commands: /clear, /help", "info");
+      showToast("Available commands: /clear, /help, /leave", "info");
       messageInput.value = "";
       return;
     } else {
