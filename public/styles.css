@@ -127,6 +127,7 @@ h3 {
   box-shadow: 0 6px 12px var(--shadow-color);
   border: 1px solid var(--border-color);
   transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  overflow: hidden; /* Prevent content from breaking out of the card */
 }
 
 .card:hover {
@@ -155,6 +156,11 @@ button {
   overflow: hidden;
   z-index: 1;
   box-shadow: 0 4px 10px rgba(98, 0, 234, 0.2);
+  min-height: 45px; /* Ensure consistent height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .primary-btn:before {
@@ -180,6 +186,17 @@ button {
 .primary-btn:active {
   transform: translateY(2px);
   box-shadow: 0 2px 6px rgba(98, 0, 234, 0.3);
+}
+
+/* Improve button accessibility for touch devices */
+@media (max-width: 768px) {
+  .primary-btn, .danger-btn, .icon-btn {
+    min-height: 48px; /* Larger touch target on mobile */
+  }
+  
+  .icon-btn {
+    min-width: 48px;
+  }
 }
 
 .danger-btn {
@@ -339,6 +356,8 @@ input[type="text"]:focus {
   padding: var(--space-md);
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
+  scroll-behavior: smooth; /* For smooth scrolling when new messages appear */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 #messages-container::-webkit-scrollbar {
@@ -352,6 +371,11 @@ input[type="text"]:focus {
 #messages-container::-webkit-scrollbar-thumb {
   background-color: var(--border-color);
   border-radius: var(--radius-full);
+}
+
+/* Add padding at the bottom to ensure last message is visible above input form */
+#messages {
+  padding-bottom: 10px;
 }
 
 #messages {
@@ -383,6 +407,8 @@ input[type="text"]:focus {
   max-width: 80%;
   box-shadow: 0 2px 5px var(--shadow-light);
   position: relative;
+  word-break: break-word; /* Prevent long words from breaking the layout */
+  hyphens: auto; /* Allow hyphenation for better text wrapping */
 }
 
 .message .username {
@@ -407,14 +433,23 @@ input[type="text"]:focus {
   text-align: center;
   color: var(--text-secondary);
   font-style: italic;
-  margin: var(--space-sm) 0;
+  margin: var(--space-sm) auto; /* Center with auto margins */
   font-size: 0.85rem;
   background-color: rgba(138, 84, 253, 0.08);
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-full);
-  display: inline-block;
-  margin-left: auto;
-  margin-right: auto;
+  display: table; /* Better centering for variable width */
+  max-width: 80%; /* Limit maximum width */
+  word-break: break-word; /* Prevent overflow with long text */
+}
+
+/* Add icon to system messages */
+.system-message::before {
+  content: '\f05a'; /* Font Awesome info icon */
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  margin-right: 0.5rem;
+  opacity: 0.7;
 }
 
 #message-form {
@@ -529,8 +564,9 @@ input[type="text"]:focus {
 
 .modal-body {
   padding: var(--space-lg);
-  max-height: 400px;
+  max-height: 50vh; /* Use viewport height for better responsive behavior */
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .modal-footer {
@@ -616,6 +652,7 @@ input[type="text"]:focus {
   max-width: 100%;
   overflow: hidden;
   border: 1px solid var(--border-color);
+  position: relative; /* Ensure position is set for absolute child elements */
 }
 
 @keyframes toastFadeIn {
@@ -629,36 +666,39 @@ input[type="text"]:focus {
   }
 }
 
-.toast:before {
-  content: '';
-  height: 100%;
-  width: 4px;
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
+/* Fix the toast color bar issue by using pseudo-element properly */
 .toast.success {
-  border-left: 4px solid var(--success);
-}
-
-.toast.success:before {
-  background-color: var(--success);
+  padding-left: calc(var(--space-md) + 4px);
 }
 
 .toast.error {
-  border-left: 4px solid var(--danger);
-}
-
-.toast.error:before {
-  background-color: var(--danger);
+  padding-left: calc(var(--space-md) + 4px);
 }
 
 .toast.info {
-  border-left: 4px solid var(--accent-primary);
+  padding-left: calc(var(--space-md) + 4px);
 }
 
-.toast.info:before {
+.toast.success::before,
+.toast.error::before,
+.toast.info::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 4px;
+}
+
+.toast.success::before {
+  background-color: var(--success);
+}
+
+.toast.error::before {
+  background-color: var(--danger);
+}
+
+.toast.info::before {
   background-color: var(--accent-primary);
 }
 
