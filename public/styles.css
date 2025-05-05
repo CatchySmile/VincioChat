@@ -161,6 +161,7 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  border-radius: 10px;
 }
 
 .primary-btn:before {
@@ -177,6 +178,7 @@ button {
 
 .primary-btn:hover {
   box-shadow: 0 6px 16px rgba(98, 0, 234, 0.3);
+  color: white;
 }
 
 .primary-btn:hover:before {
