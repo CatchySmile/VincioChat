@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scratchy Chat Room</title>
-    <link rel="stylesheet" href="./styles/styles.css">
+    <link rel="stylesheet" href="./styles/dark.css">
+    <link rel="stylesheet" href="./styles/settings.css">
+    <link rel="stylesheet" href="./styles/themes.css">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,7 +56,7 @@
         <!-- Chat Room Screen -->
         <div id="chat-room" class="hidden">
             <div class="chat-header">
-                <h2>Room: <span id="room-code-display"></span></h2>
+                <h2>Room: <span class="span" id="room-code-display"></span></h2>
                 <div class="chat-controls">
                     <button id="settings-btn" class="icon-btn" title="Settings">
                       <i class="fas fa-cog"></i>
@@ -199,7 +202,7 @@
         </div>
     </div>
 
-<!-- Settings Modal -->
+<!-- Enhanced Settings Modal -->
 <div id="settings-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -208,32 +211,64 @@
       </div>
       <div class="modal-body">
         <!-- Theme Settings -->
-        <div class="settings-section">
+        <div class="settings-section theme">
           <h4>Theme</h4>
           <div class="settings-option">
             <label for="theme-select">Choose Theme:</label>
             <select id="theme-select">
-              <option value="dark">Dark Theme</option>
-              <option value="light">Light Theme</option>
+              <option value="dark">Dark</option>
+              <option value="material">Material</option>
+              <option value="light">Light</option>
+              <option value="blackred">Midnight Red</option>
+              <option value="mint">Mint</option>
+              <option value="matrix">Matrix</option>
+
+
+            </select>
+          </div>
+          <div class="settings-option">
+            <label for="accent-color-select">Accent Color:</label>
+            <select id="accent-color-select">
+              <option value="purple">Purple</option>
+              <option value="black">Black</option>
+              <option value="blue">Blue</option>
+              <option value="red">Red</option>
+              <option value="green">Green</option>
+              <option value="pink">Pink</option>
             </select>
           </div>
         </div>
         
         <!-- Notification Settings -->
-        <div class="settings-section">
+        <div class="settings-section notifications">
           <h4>Notifications</h4>
           <div class="settings-option">
-            <label for="notification-toggle">Enable sound:</label>
-            <input type="checkbox" id="notification-toggle">
+            <label for="notification-toggle">Enable sound [Not implemented</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notification-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="settings-option">
+            <label for="toast-duration-select">Toast Duration:</label>
+            <select id="toast-duration-select">
+              <option value="500">Fast (0.5s)</option>
+              <option value="2000">Short (2s)</option>
+              <option value="3000" selected>Normal (3s)</option>
+              <option value="5000">Long (5s)</option>
+            </select>
           </div>
         </div>
         
         <!-- Message Settings -->
-        <div class="settings-section">
+        <div class="settings-section messages">
           <h4>Messages</h4>
           <div class="settings-option">
-            <label for="message-timestamp-toggle">Show timestamps:</label>
-            <input type="checkbox" id="message-timestamp-toggle" checked>
+            <label for="message-timestamp-toggle">Show timestamps</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="message-timestamp-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
       </div>
@@ -249,5 +284,6 @@
     <!-- Load Socket.IO client from CDN (for development) -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
+    <script src="settings.js"></script>
 </body>
 </html>
