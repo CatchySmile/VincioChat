@@ -621,7 +621,7 @@ input[type="text"]:focus {
 
 #user-list li.owner {
   border-left: 3px solid var(--accent-primary);
-  background-color: rgba(138, 84, 253, 0.1);
+  background-color: var(--bg-secondary);
   font-weight: 500;
 }
 
