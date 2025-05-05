@@ -591,60 +591,60 @@ function scrollToBottom() {
   }
 }
 
-// Add event listener for kicked users
-socket.on('kickedFromRoom', ({ roomCode }) => {
-  showToast('You have been kicked from the room', 'error');
-  state.currentRoom = null;
-  state.isRoomOwner = false;
-  navigateTo('room-selection');
-});
-
-// Add kick functionality to user list items
-function updateUsersList() {
-  userList.innerHTML = '';
-  
-  state.users.forEach(username => {
-    const li = document.createElement('li');
-    li.textContent = username;
-    
-    // Only show kick button for room owner and other users
-    if (state.isRoomOwner && username !== state.username) {
-      const kickBtn = document.createElement('button');
-      kickBtn.className = 'icon-btn warning kick-user-btn';
-      kickBtn.title = 'Kick user';
-      kickBtn.innerHTML = '<i class="fas fa-user-slash"></i>';
-      
-      kickBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        confirmKickUser(username);
-      });
-      
-      li.appendChild(kickBtn);
-    }
-    
-    // Highlight the room owner
-    if (username === state.username && state.isRoomOwner) {
-      li.classList.add('owner');
-    }
-    
-    userList.appendChild(li);
+  // Add event listener for kicked users
+  socket.on('kickedFromRoom', ({ roomCode }) => {
+    showToast('You have been kicked from the room', 'error');
+    state.currentRoom = null;
+    state.isRoomOwner = false;
+    navigateTo('room-selection');
   });
-}
 
-// Add confirmation modal for kicking users
-function confirmKickUser(username) {
-  // Find the user's socket ID
-  const userToKick = state.users.find(user => user.username === username);
-  if (!userToKick) return;
-  
-  if (confirm(`Are you sure you want to kick ${username}?`)) {
-    socket.emit('kickUser', {
-      roomCode: state.currentRoom,
-      userToKickId: userToKick.id,
-      csrfToken: state.csrfToken
+  // Add kick functionality to user list items
+  function updateUsersList() {
+    userList.innerHTML = '';
+    
+    state.users.forEach(username => {
+      const li = document.createElement('li');
+      li.textContent = username;
+      
+      // Only show kick button for room owner and other users
+      if (state.isRoomOwner && username !== state.username) {
+        const kickBtn = document.createElement('button');
+        kickBtn.className = 'icon-btn warning kick-user-btn';
+        kickBtn.title = 'Kick user';
+        kickBtn.innerHTML = '<i class="fas fa-user-slash"></i>';
+        
+        kickBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          confirmKickUser(username);
+        });
+        
+        li.appendChild(kickBtn);
+      }
+      
+      // Highlight the room owner
+      if (username === state.username && state.isRoomOwner) {
+        li.classList.add('owner');
+      }
+      
+      userList.appendChild(li);
     });
   }
-}
+
+  // Add confirmation modal for kicking users
+  function confirmKickUser(username) {
+    // Find the user's socket ID
+    const userToKick = state.users.find(user => user.username === username);
+    if (!userToKick) return;
+    
+    if (confirm(`Are you sure you want to kick ${username}?`)) {
+      socket.emit('kickUser', {
+        roomCode: state.currentRoom,
+        userToKickId: userToKick.id,
+        csrfToken: state.csrfToken
+      });
+    }
+  }
 
 
 let lastMessageTime = 0;
