@@ -1,181 +1,217 @@
 /**
- * Enhanced logging utility with security improvements
- * Logs contain no identifiable information and are served from memory.
+ * Privacy-Focused Logger
+ * 
+ * Minimalist logging utility that prioritizes user privacy
+ * and provides clean, structured logs with zero PII retention.
  */
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
+const path = require('path');
 
-// Log levels
+// Log levels with clearer separation of concerns
 const LEVELS = {
-  ERROR: 0,
-  WARN: 1,
-  INFO: 2,
-  DEBUG: 3,
-  SECURITY: 4 // New security-specific level
+  ERROR: {
+    value: 0,
+    label: 'ERROR',
+    color: '\x1b[31m', // Red
+    icon: '✖'
+  },
+  WARN: {
+    value: 1,
+    label: 'WARN',
+    color: '\x1b[33m', // Yellow
+    icon: '⚠'
+  },
+  INFO: {
+    value: 2,
+    label: 'INFO',
+    color: '\x1b[36m', // Cyan
+    icon: 'ℹ'
+  },
+  DEBUG: {
+    value: 3,
+    label: 'DEBUG',
+    color: '\x1b[90m', // Gray
+    icon: '⋯'
+  },
+  AUDIT: {
+    value: 4,
+    label: 'AUDIT',
+    color: '\x1b[35m', // Purple
+    icon: '⚙'
+  }
 };
 
-// Configure log level from environment or default to INFO
-const LOG_LEVEL = process.env.LOG_LEVEL ? 
-  LEVELS[process.env.LOG_LEVEL.toUpperCase()] || LEVELS.INFO : 
-  LEVELS.INFO;
+// Configurable options with better defaults for privacy
+const config = {
+  // Only keep in-memory logs by default
+  memoryOnly: true,
+  
+  // Memory log retention (entries)
+  memoryLogLimit: 1000,
+  
+  // Configure log level from environment or default to INFO
+  logLevel: process.env.LOG_LEVEL ? 
+    (LEVELS[process.env.LOG_LEVEL.toUpperCase()] || LEVELS.INFO) : 
+    LEVELS.INFO,
+    
+  // Hashing salt (generate random by default)
+  hashingSalt: process.env.LOG_SALT || crypto.randomBytes(16).toString('hex'),
+  
+  // Identifier pattern matches items to hash
+  identifierPatterns: [
+    /([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})/, // UUIDs
+    /\b([0-9A-Fa-f]{12,})\b/g,   // Room codes and long hex strings
+    /\b(socket\.id|socketId|userId)[:=]\s*["']?(\w+)["']?/gi // Socket IDs
+  ]
+};
 
-// Log directory with secure permissions
-const LOG_DIR = path.join(__dirname, '../../logs'); 
-
-// Create log directory if it doesn't exist with secure permissions
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true, mode: 0o750 }); // Secure permissions
-}
-
-// File for persistent logging with rotation
-const LOG_FILE = path.join(LOG_DIR, `app-${new Date().toISOString().split('T')[0]}.log`);
+// In-memory log storage (never written to disk)
+const memoryLogs = [];
 
 /**
- * Formats a log message with timestamp and level
- * @param {string} level - Log level
- * @param {string} message - Log message
- * @returns {string} Formatted log message
+ * Creates a privacy-safe identifier
+ * @param {string} identifier - The identifier to hash
+ * @returns {string} Truncated hash of the identifier
  */
-function formatLogMessage(level, message) {
-  const timestamp = new Date().toISOString();
-  return `[${timestamp}] [${level}] ${message}`;
+function createPrivacyHash(identifier) {
+  if (!identifier) return '[redacted]';
+  
+  const hash = crypto.createHash('sha256');
+  hash.update(identifier + config.hashingSalt);
+  // Return only first 6 characters - enough to identify in logs
+  // but not enough to reverse-engineer the original value
+  return hash.digest('hex').substring(0, 6);
 }
 
 /**
- * Sanitizes sensitive data from log messages
- * @param {string} message - Log message
- * @returns {string} Sanitized log message
+ * Sanitizes a message to protect user privacy
+ * @param {string} message - The message to sanitize
+ * @returns {string} Privacy-safe message
  */
-function sanitizeLogMessage(message) {
+function sanitizeMessage(message) {
   if (!message) return '';
   
-  // Replace potential PII patterns
-  let sanitized = message;
+  let sanitized = message.toString();
   
-  // Replace email addresses
-  sanitized = sanitized.replace(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi, '[EMAIL]');
-  
-  // Replace IP addresses
-  sanitized = sanitized.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[IP]');
-  
-  // Replace token patterns
-  sanitized = sanitized.replace(/token[:=]\s*["']?\w+["']?/gi, 'token=[REDACTED]');
-  
-  // Replace password patterns
-  sanitized = sanitized.replace(/password[:=]\s*["']?\w+["']?/gi, 'password=[REDACTED]');
+  // Replace sensitive patterns
+  sanitized = sanitized
+    // Email addresses
+    .replace(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi, '[email]')
+    // IP addresses
+    .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[ip]')
+    // Authentication tokens
+    .replace(/token[:=]\s*["']?\w+["']?/gi, 'token=[redacted]')
+    // Passwords and secrets
+    .replace(/(?:password|secret|key)[:=]\s*["']?\w+["']?/gi, '$1=[redacted]')
+    // Message content - don't log actual chat messages
+    .replace(/"text":\s*"([^"]+)"/g, '"text": "[message]"')
+    // Username - replace with privacy hash
+    .replace(/"username":\s*"([^"]+)"/g, (match, username) => {
+      return `"username": "user_${createPrivacyHash(username)}"`;
+    });
+    
+  // Replace identifiers using patterns
+  config.identifierPatterns.forEach(pattern => {
+    sanitized = sanitized.replace(pattern, (match, id) => {
+      if (id) {
+        return match.replace(id, createPrivacyHash(id));
+      }
+      return match;
+    });
+  });
   
   return sanitized;
 }
 
 /**
- * Writes a message to the log file with rotation support
- * @param {string} message - Formatted log message
+ * Formats a log entry with consistent styling
+ * @param {Object} level - Log level object
+ * @param {string} message - Log message
+ * @returns {Object} Formatted log entry
  */
-function writeToFile(message) {
-  try {
-    // Check if log file size exceeds limit (10MB)
-    const LOG_SIZE_LIMIT = 10 * 1024 * 1024; // 10MB
-    
-    if (fs.existsSync(LOG_FILE)) {
-      const stats = fs.statSync(LOG_FILE);
-      
-      if (stats.size >= LOG_SIZE_LIMIT) {
-        // Rotate log file
-        const timestamp = new Date().toISOString().replace(/:/g, '-');
-        const newFileName = `app-${timestamp}.log`;
-        const rotatedLogFile = path.join(LOG_DIR, newFileName);
-        
-        fs.renameSync(LOG_FILE, rotatedLogFile);
-      }
-    }
-    
-    // Append to log file (create if doesn't exist)
-    fs.appendFile(LOG_FILE, message + '\n', { mode: 0o640 }, (err) => {
-      if (err) console.error('Error writing to log file:', err);
-    });
-  } catch (error) {
-    console.error('Error handling log file:', error);
-  }
+function formatLogEntry(level, message) {
+  const timestamp = new Date().toISOString();
+  const sanitizedMessage = sanitizeMessage(message);
+  
+  return {
+    timestamp,
+    level: level.label,
+    message: sanitizedMessage,
+    // For console output
+    formattedMessage: `${level.color}${level.icon} [${timestamp}] [${level.label}]${'\x1b[0m'} ${sanitizedMessage}`
+  };
 }
 
 /**
  * Logs a message at the specified level
- * @param {number} level - Log level number
- * @param {string} levelName - Log level name
+ * @param {Object} level - Log level object
  * @param {string} message - Log message
  */
-function log(level, levelName, message) {
-  if (level <= LOG_LEVEL) {
-    // Sanitize the message to remove sensitive data
-    const sanitizedMessage = sanitizeLogMessage(message);
-    const formattedMessage = formatLogMessage(levelName, sanitizedMessage);
+function log(level, message) {
+  // Skip if below configured log level
+  if (level.value > config.logLevel.value) {
+    return;
+  }
+  
+  // Create formatted log entry
+  const entry = formatLogEntry(level, message);
+  
+  // Output to console with styling
+  console.log(entry.formattedMessage);
+  
+  // Store in memory logs
+  if (config.memoryOnly) {
+    memoryLogs.push({
+      timestamp: entry.timestamp,
+      level: entry.level,
+      message: entry.message
+    });
     
-    // Output to console with color
-    switch (levelName) {
-      case 'ERROR':
-        console.error('\x1b[31m%s\x1b[0m', formattedMessage);
-        break;
-      case 'WARN':
-        console.warn('\x1b[33m%s\x1b[0m', formattedMessage);
-        break;
-      case 'INFO':
-        console.info('\x1b[36m%s\x1b[0m', formattedMessage);
-        break;
-      case 'DEBUG':
-        console.debug('\x1b[90m%s\x1b[0m', formattedMessage);
-        break;
-      case 'SECURITY':
-        console.warn('\x1b[35m%s\x1b[0m', formattedMessage); // Purple for security logs
-        break;
-      default:
-        console.log(formattedMessage);
+    // Trim memory logs if they exceed the limit
+    if (memoryLogs.length > config.memoryLogLimit) {
+      memoryLogs.shift();
     }
-    
-    // Write to log file
-    writeToFile(formattedMessage);
   }
 }
 
 /**
- * Logger object with methods for each log level
+ * The main logger object with methods for each log level
  */
 const logger = {
-  error: (message) => log(LEVELS.ERROR, 'ERROR', message),
-  warn: (message) => log(LEVELS.WARN, 'WARN', message),
-  info: (message) => log(LEVELS.INFO, 'INFO', message),
-  debug: (message) => log(LEVELS.DEBUG, 'DEBUG', message),
+  error: (message) => log(LEVELS.ERROR, message),
+  warn: (message) => log(LEVELS.WARN, message),
+  info: (message) => log(LEVELS.INFO, message),
+  debug: (message) => log(LEVELS.DEBUG, message),
   
   /**
-   * Logs a security-related event
-   * @param {string} message - Message to log
-   * @param {Object} data - Additional data to include (will be sanitized)
+   * Logs security audit events (authentication, permissions)
+   * Avoids logging identifiable user information
+   * @param {string} action - Action being audited
+   * @param {Object} context - Additional audit context
    */
-  security: (message, data = {}) => {
-    // Create a deep copy of data to avoid modifying the original
-    const dataCopy = JSON.parse(JSON.stringify(data));
+  audit: (action, context = {}) => {
+    // Always sanitize context to ensure no PII leakage
+    const safeContext = { ...context };
     
-    // Remove sensitive fields
-    const sensitiveFields = ['password', 'token', 'sessionToken', 'csrfToken', 'secret'];
-    
-    sensitiveFields.forEach(field => {
-      if (dataCopy[field]) {
-        dataCopy[field] = '[REDACTED]';
-      }
-    });
-    
-    // Create message with data
-    const fullMessage = data ? 
-      `${message} ${JSON.stringify(dataCopy)}` : 
-      message;
-    
-    // Log at security level
-    log(LEVELS.SECURITY, 'SECURITY', fullMessage);
-    
-    // For critical security events, could implement notifications here
-    if (data && data.critical) {
-      // Example: send email, SMS, or other alert
+    // Specific handling for certain context fields
+    if (safeContext.userId) {
+      safeContext.userId = createPrivacyHash(safeContext.userId);
     }
+    if (safeContext.ip) {
+      safeContext.ip = '[ip]';
+    }
+    
+    // Log the audit event
+    log(LEVELS.AUDIT, `${action} ${JSON.stringify(safeContext)}`);
+  },
+  
+  /**
+   * Gets recent logs (for admin/debugging only)
+   * @param {number} count - Number of recent logs to retrieve
+   * @returns {Array} Recent log entries
+   */
+  getRecentLogs: (count = 100) => {
+    return memoryLogs.slice(-Math.min(count, memoryLogs.length));
   },
   
   /**
@@ -183,47 +219,18 @@ const logger = {
    * @param {string} level - Log level name
    */
   setLevel: (level) => {
-    if (LEVELS[level.toUpperCase()] !== undefined) {
-      LOG_LEVEL = LEVELS[level.toUpperCase()];
+    if (LEVELS[level.toUpperCase()]) {
+      config.logLevel = LEVELS[level.toUpperCase()];
     }
+  },
+  
+  /**
+   * Changes logger configuration
+   * @param {Object} newConfig - New configuration options
+   */
+  configure: (newConfig = {}) => {
+    Object.assign(config, newConfig);
   }
 };
-
-// Clear logs every 24 hours
-setInterval(() => {
-  // Only keep logs for the last 7 days
-  fs.readdir(LOG_DIR, (err, files) => {
-    if (err) {
-      console.error('Error reading log directory:', err);
-      return;
-    }
-    
-    const now = Date.now();
-    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-    
-    files.forEach(file => {
-      if (file.startsWith('app-') && file.endsWith('.log')) {
-        const filePath = path.join(LOG_DIR, file);
-        fs.stat(filePath, (err, stats) => {
-          if (err) {
-            console.error(`Error getting stats for file ${file}:`, err);
-            return;
-          }
-          
-          // Delete files older than a week
-          if (now - stats.mtime.getTime() > ONE_WEEK) {
-            fs.unlink(filePath, err => {
-              if (err) {
-                console.error(`Error deleting old log file ${file}:`, err);
-              } else {
-                console.info(`Deleted old log file: ${file}`);
-              }
-            });
-          }
-        });
-      }
-    });
-  });
-}, 24 * 60 * 60 * 1000); // 24 hours
 
 module.exports = logger;
