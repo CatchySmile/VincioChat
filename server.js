@@ -33,16 +33,17 @@ app.get('/socket.io/socket.io.js', (req, res) => {
 // Add security middleware with Helmet
 app.use(helmet());
 
-// Set security headers
 app.use(helmet.contentSecurityPolicy({
   directives: {
     defaultSrc: ["'self'"],
     scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-    styleSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-    fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-    connectSrc: ["'self'"],
+    styleSrc: ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+    fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+    imgSrc: ["'self'", "data:"],
+    connectSrc: ["'self'", "wss:", "ws:"],
     frameSrc: ["'none'"],
-    objectSrc: ["'none'"]
+    objectSrc: ["'none'"],
+    upgradeInsecureRequests: []
   }
 }));
 
