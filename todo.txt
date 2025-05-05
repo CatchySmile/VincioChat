@@ -1,5 +1,4 @@
-Apply ratelimit so we cant send more then 40 messages per minute, it currently doesnt work.
-Limit messages to enforce a 250ms cooldown to avoid spam.
+Apply ratelimit so we cant send more then 40 messages per minute, it currently doesnt work through security utils.
 Adding some sort of settings menu or panel...
 Allow room owners to Kick anyone in there room (force them to leave)
 Overall better cyber security is also required.
