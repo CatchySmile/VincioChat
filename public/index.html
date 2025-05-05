@@ -6,6 +6,9 @@
     <title>Scratchy Chat Room</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
@@ -16,22 +19,30 @@
                 <label for="username-input">Choose a username</label>
                 <input type="text" id="username-input" placeholder="Enter username" maxlength="20">
             </div>
-            <button id="continue-btn" class="primary-btn">Continue</button>
-            <p style="margin-top: 1rem;">
-                <a href="#" id="tos-link" style="color: var(--accent-primary); text-decoration: underline;">
-                    Terms of Service & Privacy
-                </a>
+            <button id="continue-btn" class="primary-btn">
+                <i class="fas fa-arrow-right"></i> Continue
+            </button>
+            <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+                By continuing, you agree to our
+                <a href="#" id="tos-link">Terms of Service & Privacy Policy</a>
             </p>
         </div>
 
         <!-- Room Selection Screen -->
         <div id="room-selection" class="hidden">
             <div class="card">
-                <h3>Create a New Room</h3>
+                <h3><i class="fas fa-plus-circle"></i> Create a New Room</h3>
+                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    Start a new chat room and invite others to join
+                </p>
                 <button id="create-room-btn" class="primary-btn">Create Room</button>
             </div>
             <div class="card">
-                <h3>Join Existing Room</h3>
+                <h3><i class="fas fa-sign-in-alt"></i> Join Existing Room</h3>
+                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    Enter a 12-digit room code to join
+                </p>
+                
                 <div class="input-group">
                     <input type="text" id="room-code-input" placeholder="Enter 12-digit room code" maxlength="12">
                 </div>
@@ -73,12 +84,14 @@
     <div id="users-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Users in Room</h3>
+                <h3><i class="fas fa-users"></i> Users in Room</h3>
                 <button class="close-modal">&times;</button>
             </div>
             <ul id="user-list"></ul>
             <div class="modal-footer admin-controls hidden">
-                <button id="delete-room-btn" class="danger-btn">Delete Room</button>
+                <button id="delete-room-btn" class="danger-btn">
+                    <i class="fas fa-trash-alt"></i> Delete Room
+                </button>
             </div>
         </div>
     </div>
@@ -87,11 +100,14 @@
     <div id="leave-confirm-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Leave Room?</h3>
+                <h3><i class="fas fa-question-circle"></i> Leave Room?</h3>
                 <button class="close-modal">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 1rem;">
+            <div class="modal-body">
                 <p>Are you sure you want to leave the chat room?</p>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                    You won't be able to see any new messages after leaving.
+                </p>
             </div>
             <div class="modal-footer">
                 <button class="primary-btn">Yes, Leave</button>
@@ -104,29 +120,77 @@
     <div id="tos-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🛡 Privacy & Terms</h3>
+                <h3><i class="fas fa-shield-alt"></i> Privacy & Terms</h3>
                 <button class="close-modal">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 1rem; max-height: 300px; overflow-y: auto;">
+            <div class="modal-body" style="max-height: 300px; overflow-y: auto;">
                 <div>
-                    <ul>
-                        <li>We do not store chat logs, IP addresses, or any identifying data. Everything else is kept in memory only during the session.</li>
-                        <li>By using Scratchy Chat, you agree not to misuse the platform. Abuse or illegal activity are not tolerated in any capacity.</li>
+                    <h4 style="margin-bottom: 0.8rem; color: var(--accent-primary);">Privacy Policy</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>We do not store chat logs, IP addresses, or any identifying data. Everything is kept in memory only during the session.</span>
+                        </li>
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>When a room is deleted, all messages and information are permanently erased.</span>
+                        </li>
                     </ul>
-                        <!-- Centered Law enforcement URL Button-->
-                        <div style="text-align: center;">
-                            <a href="/legal.html" target="_blank" class="primary-btn" 
-                               style="text-decoration: none; margin-top: 1rem; display: inline-block; border-radius: 40%; padding: 0.5rem 1rem; background-color: #007bff; color: white; width: 70%;">
-                               <i class="fas fa-gavel"></i> Legal Information
-                            </a>
-                         </div>
-                         
-                     
-
+                    
+                    <h4 style="margin: 1.2rem 0 0.8rem; color: var(--accent-primary);">Terms of Service</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-exclamation-circle" style="color: var(--warning); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>By using Scratchy Chat, you agree not to misuse the platform. Abuse or illegal activity are not tolerated.</span>
+                        </li>
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-exclamation-circle" style="color: var(--warning); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>Scratchy Chat is provided "as-is" for personal and experimental use only.</span>
+                        </li>
+                    </ul>
+                        
+                    <!-- Legal Information Button -->
+                    <div style="text-align: center; margin-top: 1.5rem;">
+                        <a href="/legal.html" target="_blank" class="primary-btn" 
+                           style="text-decoration: none; display: inline-block; padding: 0.6rem 1.2rem; width: auto;">
+                           <i class="fas fa-gavel"></i> Full Legal Information
+                        </a>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="primary-btn" id="close-tos-btn">Close</button>
+                <button class="primary-btn" id="close-tos-btn">
+                    <i class="fas fa-check"></i> I Understand
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Help Modal -->
+    <div id="command-help-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-terminal"></i> Available Commands</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/help</code>
+                        <p style="margin-top: 0.5rem;">Display available commands</p>
+                    </li>
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/clear</code>
+                        <p style="margin-top: 0.5rem;">Clear your chat history (only for you)</p>
+                    </li>
+                    <li style="margin-bottom: 1rem;">
+                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/leave</code>
+                        <p style="margin-top: 0.5rem;">Leave the current room</p>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn" id="close-command-help-btn">Got it</button>
             </div>
         </div>
     </div>
