@@ -461,3 +461,48 @@ input:checked + .toggle-slider:before {
   margin-left: auto;
   font-size: 1rem;
 }
+/* Add to settings.css */
+
+.select-with-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-info {
+  display: none;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--accent-primary);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.preview-active .preview-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Add additional styling for the secondary button */
+.secondary-btn {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal) ease;
+  border: 1px solid var(--border-color);
+}
+
+.secondary-btn:hover {
+  background-color: var(--input-bg);
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+}
