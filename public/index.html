@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="./styles/dark.css">
     <link rel="stylesheet" href="./styles/settings.css">
     <link rel="stylesheet" href="./styles/themes.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -212,29 +211,48 @@
       <div class="modal-body">
         <!-- Theme Settings -->
         <div class="settings-section theme">
-          <h4>Theme</h4>
+          <h4>Appearance</h4>
+          
+          <!-- Theme Selection -->
           <div class="settings-option">
-            <label for="theme-select">Choose Theme:</label>
+            <label for="theme-select">Theme:</label>
             <select id="theme-select">
               <option value="dark">Dark</option>
-              <option value="material">Material</option>
               <option value="light">Light</option>
-              <option value="blackred">Midnight Red</option>
+              <option value="material">Material</option>
               <option value="mint">Mint</option>
+              <option value="blackred">Midnight Red</option>
               <option value="matrix">Matrix</option>
-
-
             </select>
+            <div class="preview-info">
+              <i class="fas fa-eye"></i> Preview is active
+            </div>
           </div>
+        </div>
+          
+          <!-- Accent Color -->
           <div class="settings-option">
             <label for="accent-color-select">Accent Color:</label>
             <select id="accent-color-select">
               <option value="purple">Purple</option>
-              <option value="black">Black</option>
               <option value="blue">Blue</option>
               <option value="red">Red</option>
               <option value="green">Green</option>
               <option value="pink">Pink</option>
+              <option value="black">Black</option>
+              <div class="preview-info">
+                <i class="fas fa-eye"></i> Preview is active
+              </div>
+            </div>
+          </div>
+          
+          <!-- Font Size -->
+          <div class="settings-option">
+            <label for="font-size-select">Font Size:</label>
+            <select id="font-size-select">
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
             </select>
           </div>
         </div>
@@ -242,23 +260,48 @@
         <!-- Notification Settings -->
         <div class="settings-section notifications">
           <h4>Notifications</h4>
+          
+          <!-- Sound Notifications -->
           <div class="settings-option">
-            <label for="notification-toggle">Enable sound [Not implemented</label>
+            <label for="notification-toggle">Enable notifications</label>
             <label class="toggle-switch">
               <input type="checkbox" id="notification-toggle">
               <span class="toggle-slider"></span>
             </label>
           </div>
+          
+          <!-- Toast Duration -->
           <div class="settings-option">
             <label for="toast-duration-select">Toast Duration:</label>
             <select id="toast-duration-select">
-              <option value="500">Fast (0.5s)</option>
               <option value="2000">Short (2s)</option>
-              <option value="3000" selected>Normal (3s)</option>
+              <option value="3000">Normal (3s)</option>
               <option value="5000">Long (5s)</option>
+              <option value="8000">Extra Long (8s)</option>
             </select>
           </div>
         </div>
+        
+        <!-- Message Settings -->
+        <div class="settings-section messages">
+          <h4>Messages</h4>
+          
+          <!-- Show Timestamps -->
+          <div class="settings-option">
+            <label for="message-timestamp-toggle">Show timestamps</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="message-timestamp-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="reset-settings-btn" class="secondary-btn">Reset Defaults</button>
+        <button id="save-settings-btn" class="primary-btn">Save Settings</button>
+      </div>
+    </div>
+  </div>
         
         <!-- Message Settings -->
         <div class="settings-section messages">
@@ -273,6 +316,9 @@
         </div>
       </div>
       <div class="modal-footer">
+        <button id="cancel-settings-btn" class="secondary-btn" onclick="window.settingsManager.cancelPreviews(); toggleModal(document.getElementById('settings-modal'), false);">
+            Cancel
+          </button>
         <button class="primary-btn" id="save-settings-btn">Save Settings</button>
       </div>
     </div>
@@ -283,7 +329,7 @@
 
     <!-- Load Socket.IO client from CDN (for development) -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="app.js"></script>
     <script src="settings.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
