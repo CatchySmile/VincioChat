@@ -1,4 +1,3 @@
-Phase 1: Core Framework Enhancements
 
 Refine Security & Privacy Features
 
