@@ -1,0 +1,106 @@
+
+
+/* CSS Variables for z-index to prevent z-index wars */
+:root {
+    --z-base: 1;
+    --z-header: 10;
+    --z-overlay: 100;
+    --z-modal: 1000;
+    --z-toast: 2000;
+    --z-tooltip: 3000;
+  }
+  
+  /* Apply z-index correctly */
+  .chat-header {
+    z-index: var(--z-header);
+  }
+  
+  .modal {
+    z-index: var(--z-modal);
+  }
+  
+  #toast-container {
+    z-index: var(--z-toast);
+  }
+  
+  /* Sanitized content markers */
+  .user-content {
+    /* Visual indicator for user-generated content */
+    position: relative;
+  }
+  
+  /* Add more semantic HTML structure */
+  main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  header {
+    width: 100%;
+  }
+  
+  footer {
+    width: 100%;
+  }
+  
+  /* Accessibility enhancements */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+  
+  /* Focus indicators that work across all themes */
+  :focus-visible {
+    outline: 3px solid var(--accent-primary);
+    outline-offset: 2px;
+  }
+  
+  /* Ensure all interactive elements have proper hover/focus states */
+  button,
+  input[type="text"],
+  select {
+    transition: all var(--transition-normal) ease;
+  }
+  
+  button:hover:not(:disabled),
+  select:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  
+  button:active:not(:disabled),
+  select:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  
+  button:disabled,
+  input:disabled,
+  select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Content security classes */
+  .sanitized-content img,
+  .sanitized-content iframe,
+  .sanitized-content object,
+  .sanitized-content embed {
+    /* Block potentially unsafe elements */
+    display: none !important;
+  }
+  
+  /* Add security CSS for inline styles */
+  [style] {
+    /* Prevent dangerous CSS behaviors like position:fixed */
+    position: static !important;
+    /* Block risky CSS properties */
+    behavior: none !important;
+    -moz-binding: none !important;
+    --binding: none !important;
+  }
