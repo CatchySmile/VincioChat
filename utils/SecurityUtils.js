@@ -15,7 +15,7 @@ class SecurityUtils {
   static rateLimits = new Map();
 
   /**
-   * Rate limit constants
+   * Old-ish Rate limit constants
    */
   static RATE_LIMIT = {
     MESSAGES: { max: 40, period: 60000 }, // 40 messages per minute
@@ -42,12 +42,11 @@ class SecurityUtils {
   };
 
   /**
-   * Sanitizes text input to prevent XSS attacks
+   * Enhanced sanitization for text inputs with additional security checks
    * @param {string} text - Text to sanitize
    * @param {number} maxLength - Maximum allowed length
    * @returns {string} Sanitized text
    */
-
   static sanitizeText(text, maxLength) {
     if (!text || typeof text !== 'string') return '';
     
@@ -57,56 +56,158 @@ class SecurityUtils {
       sanitized = sanitized.slice(0, maxLength);
     }
     
+    // Remove control characters and zero-width characters
+    sanitized = sanitized.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '');
+    
     // Use DOMPurify with stricter configuration
     return DOMPurify.sanitize(sanitized, {
       ALLOWED_TAGS: [], // No HTML tags allowed
       ALLOWED_ATTR: [], // No attributes allowed
       KEEP_CONTENT: true, // Keep the text content
       FORBID_TAGS: ['style', 'script', 'iframe', 'form', 'object', 'embed', 'link'],
-      FORBID_ATTR: ['style', 'onerror', 'onload', 'onmouseover', 'onmouseout', 'onclick']
+      FORBID_ATTR: ['style', 'onerror', 'onload', 'onmouseover', 'onmouseout', 'onclick'],
+      ALLOW_DATA_ATTR: false, // Prevent data-* attributes
+      ADD_URI_SAFE_ATTR: false // No additional URI safe attributes
     });
   }
 
   /**
-   * Checks if a request is rate limited
-   * @param {string} ip - IP address of the client
-   * @param {string} action - Action type (messages, connections, rooms)
-   * @returns {boolean} True if rate limited, false otherwise
+   * Detects potentially malicious content patterns
+   * @param {string} text - Text to check
+   * @returns {boolean} True if suspicious patterns detected
    */
-  static isRateLimited(ip, action) {
-    const now = Date.now();
-    const key = `${ip}:${action}`;
+  static detectSuspiciousContent(text) {
+    if (!text) return false;
     
-    if (!this.rateLimits.has(key)) {
-      this.rateLimits.set(key, {
-        count: 1,
-        reset: now + this.RATE_LIMIT[action.toUpperCase()].period
-      });
-      return false;
-    }
+    // Check for script injection attempts
+    const scriptPattern = /<script|javascript:|data:text\/html|vbscript:|livescript:|<\/script>/i;
+    if (scriptPattern.test(text)) return true;
     
-    const limit = this.rateLimits.get(key);
+    // Check for CSS injection attempts
+    const cssPattern = /<style|expression\s*\(|@import|behavior:/i;
+    if (cssPattern.test(text)) return true;
     
-    // Reset counter if period has passed
-    if (now >= limit.reset) {
-      limit.count = 1;
-      limit.reset = now + this.RATE_LIMIT[action.toUpperCase()].period;
-      return false;
-    }
+    // Check for iframe and object injection
+    const framePattern = /<iframe|<object|<embed|<frame|<frameset/i;
+    if (framePattern.test(text)) return true;
     
-    // Increment counter
-    limit.count++;
+    // Check for excessive use of symbols (potential DoS)
+    const symbolRatio = (text.match(/[^\w\s]/g) || []).length / text.length;
+    if (symbolRatio > 0.4 && text.length > 20) return true;
     
-    // Check if limit exceeded
-    const exceeded = limit.count > this.RATE_LIMIT[action.toUpperCase()].max;
+    // Check for excessively long words (potential DoS)
+    const longestWordLength = Math.max(...text.split(/\s+/).map(word => word.length), 0);
+    if (longestWordLength > 50) return true;
     
-    // Clean up old entries every 100 checks (approximately)
-    if (Math.random() < 0.01) {
-      this.cleanupRateLimits();
-    }
-    
-    return exceeded;
+    return false;
   }
+
+/**
+ * Enhanced rate limiter with IP tracking and adaptive limits
+ */
+static rateLimits = new Map();
+
+/**
+ * Rate limit constants with adaptive scaling
+ */
+static RATE_LIMIT = {
+  MESSAGES: { 
+    max: 30,           // Base limit: 30 messages per minute
+    period: 60000,     // 1 minute in milliseconds
+    burst: 10,         // Allow bursts of 10 messages
+    increasing: true   // Allow increasing penalty for repeated violations
+  },
+  CONNECTIONS: { 
+    max: 15, 
+    period: 60000,
+    burst: 5,
+    increasing: true
+  },
+  ROOMS: { 
+    max: 5, 
+    period: 300000,    // 5 minutes
+    burst: 2,
+    increasing: false
+  }
+};
+
+/**
+ * Enhanced rate limiting with burst allowance and adaptive penalties
+ * @param {string} ip - IP address of the client
+ * @param {string} action - Action type (messages, connections, rooms)
+ * @returns {boolean} True if rate limited, false otherwise
+ */
+static isRateLimited(ip, action) {
+  const now = Date.now();
+  const key = `${ip}:${action}`;
+  const actionConfig = this.RATE_LIMIT[action.toUpperCase()];
+  
+  if (!actionConfig) {
+    return false; // Unknown action type, don't rate limit
+  }
+  
+  if (!this.rateLimits.has(key)) {
+    // Initialize new rate limit entry
+    this.rateLimits.set(key, {
+      count: 1,
+      reset: now + actionConfig.period,
+      violations: 0,
+      lastViolation: 0,
+      burstRemaining: actionConfig.burst
+    });
+    return false;
+  }
+  
+  const limit = this.rateLimits.get(key);
+  
+  // Reset counter if period has passed
+  if (now >= limit.reset) {
+    // Reduce violation count over time (forgiveness factor)
+    if (limit.violations > 0 && now - limit.lastViolation > 3600000) { // 1 hour
+      limit.violations = Math.max(0, limit.violations - 1);
+    }
+    
+    limit.count = 1;
+    limit.reset = now + actionConfig.period;
+    limit.burstRemaining = actionConfig.burst;
+    return false;
+  }
+  
+  // Increment counter
+  limit.count++;
+  
+  // Calculate effective limit based on past violations
+  let effectiveLimit = actionConfig.max;
+  if (actionConfig.increasing && limit.violations > 0) {
+    // Reduce limit based on violation history (stricter for repeat offenders)
+    effectiveLimit = Math.max(5, Math.floor(effectiveLimit / (1 + limit.violations * 0.5)));
+  }
+  
+  // Check if burst limit available
+  if (limit.count > effectiveLimit && limit.burstRemaining > 0) {
+    limit.burstRemaining--;
+    return false;
+  }
+  
+  // Check if limit exceeded
+  const exceeded = limit.count > effectiveLimit + limit.burstRemaining;
+  
+  // Track violations for adaptive rate limiting
+  if (exceeded) {
+    limit.violations++;
+    limit.lastViolation = now;
+    
+    // Log the violation for analysis
+    console.warn(`Rate limit exceeded for ${action} from IP ${ip}. Violation count: ${limit.violations}`);
+  }
+  
+  // Clean up old entries occasionally
+  if (Math.random() < 0.01) {
+    this.cleanupRateLimits();
+  }
+  
+  return exceeded;
+}
   
   /**
    * Cleans up expired rate limit entries
@@ -147,12 +248,18 @@ class SecurityUtils {
   }
 
   /**
-   * Validates message content
+   * Validates message content with enhanced security checks
    * @param {string} message - Message to validate
    * @returns {boolean} True if valid, false otherwise
    */
   static isValidMessage(message) {
     if (!message || typeof message !== 'string') return false;
+    
+    // Check message length
+    if (message.length === 0 || message.length > this.SIZE_LIMITS.MESSAGE) return false;
+    
+    // Check for suspicious content patterns
+    if (this.detectSuspiciousContent(message)) return false;
     
     const sanitized = this.sanitizeText(message, this.SIZE_LIMITS.MESSAGE);
     return sanitized.length > 0;
