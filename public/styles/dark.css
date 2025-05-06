@@ -388,7 +388,9 @@ input[type="text"]:focus {
   word-wrap: break-word;
   animation: messageAppear 0.3s ease-out;
   max-width: 80%;
+  background-color: var(--bg-tertiary);
   align-self: flex-start; /* Default alignment for other users' messages */
+
 }
 
 #messages li.self-message {
