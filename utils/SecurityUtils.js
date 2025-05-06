@@ -21,7 +21,7 @@ class SecurityUtils {
     MESSAGES: { 
       max: 30,           // Base limit: 30 messages per minute
       period: 60000,     // 1 minute in milliseconds
-      burst: 10,         // Allow bursts of 10 messages
+      burst: 6,         // Allow bursts of 6 messages
       increasing: true   // Allow increasing penalty for repeated violations
     },
     CONNECTIONS: { 
@@ -32,7 +32,7 @@ class SecurityUtils {
     },
     ROOMS: { 
       max: 5, 
-      period: 300000,    // 5 minutes
+      period: 180000,    // 3 minutes
       burst: 2,
       increasing: false
     }
@@ -184,7 +184,7 @@ class SecurityUtils {
       limit.lastViolation = now;
       
       // Log the violation for analysis
-      console.warn(`Rate limit exceeded for ${action} from IP ${ip}. Violation count: ${limit.violations}`);
+      console.warn(`Rate limit exceeded for ${action} from hidden IP Violation count: ${limit.violations}`);
     }
     
     // Clean up old entries occasionally
