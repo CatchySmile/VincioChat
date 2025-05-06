@@ -542,11 +542,35 @@ function addMessage(message) {
 
   const li = document.createElement('li');
   
+  // Check if this message is from the current user
+  const isCurrentUser = message.username === state.username;
+  if (isCurrentUser) {
+    li.classList.add('self-message');
+  }
+  
   // Format timestamp
   const timestamp = new Date(message.timestamp).toLocaleTimeString([], { 
     hour: '2-digit', 
     minute: '2-digit' 
   });
+  
+  // Create message container with avatar
+  const messageContainer = document.createElement('div');
+  messageContainer.classList.add('message-container');
+  
+  // Create avatar
+  const avatar = document.createElement('div');
+  avatar.classList.add('avatar');
+  
+  // Set avatar content - first letter of username or custom icon
+  const firstLetter = message.username.charAt(0).toUpperCase();
+  avatar.textContent = firstLetter;
+  
+  // Generate a consistent color based on username
+  const hue = getHashCode(message.username) % 360;
+  if (!isCurrentUser) {
+    avatar.style.backgroundColor = `hsl(${hue}, 70%, 40%)`;
+  }
   
   // Create message content
   const messageElement = document.createElement('div');
@@ -577,11 +601,34 @@ function addMessage(message) {
   
   messageElement.appendChild(timestampElement);
   
-  li.appendChild(messageElement);
+  // Append avatar and message to container
+  if (isCurrentUser) {
+    // For current user, place message first, then avatar
+    messageContainer.appendChild(messageElement);
+    messageContainer.appendChild(avatar);
+  } else {
+    // For other users, place avatar first, then message
+    messageContainer.appendChild(avatar);
+    messageContainer.appendChild(messageElement);
+  }
+  
+  // Append the message container to the list item
+  li.appendChild(messageContainer);
+  
+  // Append to the messages container
   messagesContainer.appendChild(li);
   
   // Scroll to bottom
   scrollToBottom();
+}
+
+// Add this helper function to generate consistent colors from usernames
+function getHashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash);
 }
 
 function addSystemMessage(text) {
