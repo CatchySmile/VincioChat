@@ -1,117 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
-<div">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Scratchy Chat - Legal Information</title>
-    <link rel="stylesheet" href="./styles/legal.css"> 
-    <link rel="stylesheet" href="./styles/settings.css">
-    <link rel="stylesheet" href="./styles/themes.css">
-    <script src="settings.js"></script>
+    <link rel="stylesheet" href="./styles/legal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono&display=swap" rel="stylesheet">
-
+    <script src="./settings.js" defer></script>
 </head>
 
 <body>
-    <header>
-        <div class="">
-            <h1 class="card">
-                <i class="fas fa-shield-alt" style="color: var(--accent-primary); margin-right: 0.5rem;"></i> 
-                Scratchy Chat Legal Information
-            </h1>
+    <div class="page-container">
+        <header>
+            <div class="header-content">
+                <h1>
+                    <i class="fas fa-shield-alt"></i>
+                    Scratchy Chat Legal Information
+                </h1>
+                <p class="header-subtitle">Privacy-focused, ephemeral chat with zero data retention</p>
             </div>
-    </header>
+        </header>
 
-    <div>
         <main>
-            <section style="margin-bottom: 2rem;">
-                <h2><i class="fas fa-user-shield" style="margin-right: 0.5rem;"></i> Privacy & Data Handling</h2>
-                <p>
-                    Scratchy Chat is a web-based chat room application built primarily for temporary, real-time communication. All interactions within the application, such as room creation, messages, and user details, are handled solely in-memory and are not stored permanently. Once a user session ends, all data including chat messages and room details are cleared and cannot be recovered.
-                </p>
-
-                <h3><i class="fas fa-database" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 1. No Permanent Data Storage</h3>
-                <p>
-                    Scratchy Chat does not retain any information from the chat rooms, users, or messages beyond the duration of the session. All data, including chat logs and user participation, exists only temporarily in the server's memory. No permanent storage is employed, and no data is logged for future reference or analysis. No third-party services are used to store or process user data. The application is designed to ensure that all interactions are transient and ephemeral, with no long-term data retention policies in place.
-                </p>
-
-                <h3><i class="fas fa-trash-alt" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 2. Data Deletion Upon Room Deletion</h3>
-                <p>
-                    When a room is deleted, all associated messages and user data are permanently erased. Once this deletion occurs, the data cannot be recovered by any means. Scratchy Chat operates under the assumption that all chat rooms are ephemeral and will not store any form of user data beyond the active session.
-                </p>
-
-                <h3><i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 3. Session and Room Lifetime</h3>
-                <p>
-                    A room's lifespan is determined by its users. The room and its messages will exist only for as long as the users are connected. If no users are present, the room will be deleted automatically after a certain period of inactivity. This ensures that no residual data remains on the server after the last user leaves or room owner deletes the room.
-                </p>
-
-                <h3><i class="fas fa-user-secret" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 4. No User Authentication</h3>
-                <p>
-                    Scratchy Chat does not require any user authentication, accounts, or personally identifiable information (PII) to use the platform. Users are identified solely by their session and room codes. All sessions and rooms exist temporarily in memory during the active session. No chat data is logged or stored in any way.
-                </p>
-
-                <h3><i class="fas fa-cookie-bite" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 5. Cookies and Tracking</h3>
-                <p>
-                    Scratchy Chat does not use cookies, web beacons, or any form of user tracking. No browsing data, device identifiers, or session analytics are collected or stored by us.
-                </p>
-                <h3><i class="fas fa-cookie-bite" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> 6. User configuration</h3>
-                <p>
-                    All user configuration, as in themes, settings, or similar is stored via that individuals local browser and is not logged, stored, or processed on the server.
-                </p>
-            </section>
-
-            <section style="margin-bottom: 2rem;">
-                <h2><i class="fas fa-file-contract" style="margin-right: 0.5rem;"></i> Terms of Service</h2>
-                <p>
-                    By using Scratchy Chat, you agree to the following terms:
-                </p>
+            <nav class="quick-nav">
+                <div class="nav-title">On this page</div>
                 <ul>
-                    <li>Scratchy Chat is provided "as-is" for personal and experimental use only.</li>
-                    <li>Scratchy Chat is not intended for production or business use.</li>
-                    <li>We do not guarantee the availability or reliability of the service.</li>
-                    <li>We reserve the right to suspend or terminate access to Scratchy Chat at any time without notice.</li>
+                    <li><a href="#privacy" class="nav-link"><i class="fas fa-user-shield"></i> Privacy & Data Handling</a></li>
+                    <li><a href="#terms" class="nav-link"><i class="fas fa-file-contract"></i> Terms of Service</a></li>
+                    <li><a href="#contact" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
                 </ul>
+                <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Chat</a>
+            </nav>
 
-                <h3><i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Limitation of Liability</h3>
-                <p>
-                    Scratchy Chat and its developers will not be liable for any loss, damage, or inconvenience arising from the use of this service, including, but not limited to, data loss, interruptions in service, or unauthorized access to information.
-                </p>
+            <div class="content-wrapper">
+                <section id="privacy" class="legal-section">
+                    <h2><i class="fas fa-user-shield"></i> Privacy & Data Handling</h2>
+                    <div class="section-intro">
+                        <p>
+                            Scratchy Chat is designed for temporary, ephemeral communication with no data persistence. All conversations exist only in memory and are completely deleted when rooms are closed or inactive.
+                        </p>
+                    </div>
 
-                <h3><i class="fas fa-shield-alt" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Indemnity</h3>
-                <p>
-                    By using Scratchy Chat, you agree to indemnify and hold harmless the creators, developers, and administrators of Scratchy Chat from any claims, damages, or losses resulting from your use of the service.
-                </p>
+                    <div class="legal-card">
+                        <h3><i class="fas fa-database"></i> No Permanent Data Storage</h3>
+                        <p>
+                            Scratchy Chat does not retain any information from chat rooms, users, or messages beyond the duration of the session. All data exists only temporarily in the server's memory with no persistent storage.
+                        </p>
+                        <p>
+                            No third-party services are used to store or process user data. The application ensures all interactions are transient and ephemeral, with zero long-term data retention.
+                        </p>
+                    </div>
 
-                <h3><i class="fas fa-sync-alt" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Changes to this Policy</h3>
-                <p>
-                    We may update these legal terms from time to time. All changes will be reflected on this page, and the updated version will be effective immediately upon posting. Please check this page regularly for any updates.
-                </p>
+                    <div class="legal-card">
+                        <h3><i class="fas fa-trash-alt"></i> Data Deletion Upon Room Closure</h3>
+                        <p>
+                            When a room is deleted, all associated messages and user data are permanently erased and cannot be recovered by any means. All chat rooms are designed to be ephemeral by default.
+                        </p>
+                    </div>
 
-                <h3><i class="fas fa-gavel" style="margin-right: 0.5rem; color: var(--accent-secondary);"></i> Governing Law</h3>
-                <p>
-                    These Terms and the use of Scratchy Chat are governed by the laws of the jurisdiction in which the service chooses. Any legal actions or proceedings related to this service must be brought in the courts located in the appropriate jurisdiction.
-                </p>
-            </section>
+                    <div class="legal-card">
+                        <h3><i class="fas fa-clock"></i> Session and Room Lifetime</h3>
+                        <p>
+                            A room's lifespan is determined by its users. The room and its messages exist only while users are connected. Rooms are automatically deleted after a period of inactivity, ensuring no residual data remains.
+                        </p>
+                    </div>
 
-            <section style="margin-bottom: 2rem; background-color: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <h2><i class="fas fa-envelope" style="margin-right: 0.5rem;"></i> Contact Us</h2>
-                <p style="margin-bottom: 0;">
-                    If you have any questions about legal information or need assistance, feel free to contact us at 
-                    <a href="mailto:ScratchySupport@proton.me" style="color: var(--accent-primary); font-weight: 500;">ScratchySupport@proton.me</a>.
-                </p>
-            </section>
+                    <div class="legal-card">
+                        <h3><i class="fas fa-user-secret"></i> No User Authentication</h3>
+                        <p>
+                            Scratchy Chat requires no user accounts, authentication, or personally identifiable information. Users are identified solely by temporary session IDs and room codes that exist only in memory.
+                        </p>
+                    </div>
+
+                    <div class="legal-card">
+                        <h3><i class="fas fa-cookie-bite"></i> No Cookies or Tracking</h3>
+                        <p>
+                            Scratchy Chat does not use cookies, web beacons, or any form of user tracking. No browsing data, device identifiers, or session analytics are collected or stored.
+                        </p>
+                    </div>
+
+                    <div class="legal-card">
+                        <h3><i class="fas fa-sliders-h"></i> Local User Configuration</h3>
+                        <p>
+                            All user preferences (themes, settings, etc.) are stored only in your local browser and are never logged, stored, or processed on our servers.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="terms" class="legal-section">
+                    <h2><i class="fas fa-file-contract"></i> Terms of Service</h2>
+                    <div class="section-intro">
+                        <p>
+                            By using Scratchy Chat, you agree to the following terms and conditions that govern your use of this service.
+                        </p>
+                    </div>
+
+                    <div class="legal-card">
+                        <h3><i class="fas fa-info-circle"></i> Service Provisions</h3>
+                        <ul class="terms-list">
+                            <li>Scratchy Chat is provided "as-is" for personal and experimental use only</li>
+                            <li>This service is not intended for production or business use</li>
+                            <li>We do not guarantee the availability or reliability of the service</li>
+                            <li>We reserve the right to suspend or terminate access at any time without notice</li>
+                        </ul>
+                    </div>
+
+                    <div class="legal-card">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Limitation of Liability</h3>
+                        <p>
+                            Scratchy Chat and its developers will not be liable for any loss, damage, or inconvenience arising from the use of this service, including data loss, service interruptions, or unauthorized access to information.
+                        </p>
+                    </div>
+
+                    <div class="legal-card">
+                        <h3><i class="fas fa-shield-alt"></i> Indemnity</h3>
+                        <p>
+                            By using Scratchy Chat, you agree to indemnify and hold harmless the creators, developers, and administrators of Scratchy Chat from any claims, damages, or losses resulting from your use of the service.
+                        </p>
+                    </div>
+
+                    <div class="legal-card">
+                        <h3><i class="fas fa-sync-alt"></i> Policy Changes</h3>
+                        <p>
+                            We may update these legal terms from time to time. All changes will be reflected on this page and will be effective immediately upon posting. Users are encouraged to check this page regularly for updates.
+                        </p>
+                    </div>
+
+                    <div class="legal-card">
+                        <h3><i class="fas fa-gavel"></i> Governing Law</h3>
+                        <p>
+                            These Terms and the use of Scratchy Chat are governed by the laws of the jurisdiction in which the service operates. Any legal proceedings related to this service must be brought in the courts of the appropriate jurisdiction.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="contact" class="legal-section">
+                    <h2><i class="fas fa-envelope"></i> Contact Us</h2>
+                    <div class="contact-card">
+                        <p>
+                            If you have any questions about our legal information or need assistance, please contact us at:
+                        </p>
+                        <a href="mailto:ScratchySupport@proton.me" class="contact-email">
+                            <i class="fas fa-envelope-open-text"></i>
+                            ScratchySupport@proton.me
+                        </a>
+                        <p class="response-time">
+                            <i class="fas fa-clock"></i> We typically respond within 48 hours
+                        </p>
+                    </div>
+                </section>
+            </div>
         </main>
 
-        <footer style="text-align: center; padding: 1.5rem; color: var(--text-secondary); border-top: 1px solid var(--border-color); margin-top: 2rem; width: 100%;">
-            <p>&copy; 2025 Scratchy Chat - All Rights Reserved.</p>
+        <footer>
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-comment-dots"></i> Scratchy Chat
+                </div>
+                <p class="copyright">&copy; 2025 Scratchy Chat - All Rights Reserved</p>
+                <div class="footer-links">
+                    <a href="/" class="footer-link">Home</a>
+                    <span class="separator">•</span>
+                    <a href="#privacy" class="footer-link">Privacy</a>
+                    <span class="separator">•</span>
+                    <a href="#terms" class="footer-link">Terms</a>
+                </div>
+            </div>
         </footer>
-
     </div>
+
+    <script>
+        // Initialize settings if available
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.settingsManager) {
+                window.settingsManager.initialize();
+            }
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 20,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+
 </body>
-</div>
 </html>
