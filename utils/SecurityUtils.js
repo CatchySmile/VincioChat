@@ -15,12 +15,27 @@ class SecurityUtils {
   static rateLimits = new Map();
 
   /**
-   * Old-ish Rate limit constants
+   * Rate limit constants with adaptive scaling
    */
   static RATE_LIMIT = {
-    MESSAGES: { max: 40, period: 60000 }, // 40 messages per minute
-    CONNECTIONS: { max: 20, period: 60000 }, // 20 connections per minute
-    ROOMS: { max: 10, period: 300000 } // 10 rooms per 5 minutes
+    MESSAGES: { 
+      max: 30,           // Base limit: 30 messages per minute
+      period: 60000,     // 1 minute in milliseconds
+      burst: 10,         // Allow bursts of 10 messages
+      increasing: true   // Allow increasing penalty for repeated violations
+    },
+    CONNECTIONS: { 
+      max: 15, 
+      period: 60000,
+      burst: 5,
+      increasing: true
+    },
+    ROOMS: { 
+      max: 5, 
+      period: 300000,    // 5 minutes
+      burst: 2,
+      increasing: false
+    }
   };
 
   /**
@@ -102,112 +117,83 @@ class SecurityUtils {
     return false;
   }
 
-/**
- * Enhanced rate limiter with IP tracking and adaptive limits
- */
-static rateLimits = new Map();
-
-/**
- * Rate limit constants with adaptive scaling
- */
-static RATE_LIMIT = {
-  MESSAGES: { 
-    max: 30,           // Base limit: 30 messages per minute
-    period: 60000,     // 1 minute in milliseconds
-    burst: 10,         // Allow bursts of 10 messages
-    increasing: true   // Allow increasing penalty for repeated violations
-  },
-  CONNECTIONS: { 
-    max: 15, 
-    period: 60000,
-    burst: 5,
-    increasing: true
-  },
-  ROOMS: { 
-    max: 5, 
-    period: 300000,    // 5 minutes
-    burst: 2,
-    increasing: false
-  }
-};
-
-/**
- * Enhanced rate limiting with burst allowance and adaptive penalties
- * @param {string} ip - IP address of the client
- * @param {string} action - Action type (messages, connections, rooms)
- * @returns {boolean} True if rate limited, false otherwise
- */
-static isRateLimited(ip, action) {
-  const now = Date.now();
-  const key = `${ip}:${action}`;
-  const actionConfig = this.RATE_LIMIT[action.toUpperCase()];
-  
-  if (!actionConfig) {
-    return false; // Unknown action type, don't rate limit
-  }
-  
-  if (!this.rateLimits.has(key)) {
-    // Initialize new rate limit entry
-    this.rateLimits.set(key, {
-      count: 1,
-      reset: now + actionConfig.period,
-      violations: 0,
-      lastViolation: 0,
-      burstRemaining: actionConfig.burst
-    });
-    return false;
-  }
-  
-  const limit = this.rateLimits.get(key);
-  
-  // Reset counter if period has passed
-  if (now >= limit.reset) {
-    // Reduce violation count over time (forgiveness factor)
-    if (limit.violations > 0 && now - limit.lastViolation > 3600000) { // 1 hour
-      limit.violations = Math.max(0, limit.violations - 1);
+  /**
+   * Enhanced rate limiting with burst allowance and adaptive penalties
+   * @param {string} ip - IP address of the client
+   * @param {string} action - Action type (messages, connections, rooms)
+   * @returns {boolean} True if rate limited, false otherwise
+   */
+  static isRateLimited(ip, action) {
+    const now = Date.now();
+    const key = `${ip}:${action}`;
+    const actionConfig = this.RATE_LIMIT[action.toUpperCase()];
+    
+    if (!actionConfig) {
+      return false; // Unknown action type, don't rate limit
     }
     
-    limit.count = 1;
-    limit.reset = now + actionConfig.period;
-    limit.burstRemaining = actionConfig.burst;
-    return false;
-  }
-  
-  // Increment counter
-  limit.count++;
-  
-  // Calculate effective limit based on past violations
-  let effectiveLimit = actionConfig.max;
-  if (actionConfig.increasing && limit.violations > 0) {
-    // Reduce limit based on violation history (stricter for repeat offenders)
-    effectiveLimit = Math.max(5, Math.floor(effectiveLimit / (1 + limit.violations * 0.5)));
-  }
-  
-  // Check if burst limit available
-  if (limit.count > effectiveLimit && limit.burstRemaining > 0) {
-    limit.burstRemaining--;
-    return false;
-  }
-  
-  // Check if limit exceeded
-  const exceeded = limit.count > effectiveLimit + limit.burstRemaining;
-  
-  // Track violations for adaptive rate limiting
-  if (exceeded) {
-    limit.violations++;
-    limit.lastViolation = now;
+    if (!this.rateLimits.has(key)) {
+      // Initialize new rate limit entry
+      this.rateLimits.set(key, {
+        count: 1,
+        reset: now + actionConfig.period,
+        violations: 0,
+        lastViolation: 0,
+        burstRemaining: actionConfig.burst
+      });
+      return false;
+    }
     
-    // Log the violation for analysis
-    console.warn(`Rate limit exceeded for ${action} from IP ${ip}. Violation count: ${limit.violations}`);
+    const limit = this.rateLimits.get(key);
+    
+    // Reset counter if period has passed
+    if (now >= limit.reset) {
+      // Reduce violation count over time (forgiveness factor)
+      if (limit.violations > 0 && now - limit.lastViolation > 3600000) { // 1 hour
+        limit.violations = Math.max(0, limit.violations - 1);
+      }
+      
+      limit.count = 1;
+      limit.reset = now + actionConfig.period;
+      limit.burstRemaining = actionConfig.burst;
+      return false;
+    }
+    
+    // Increment counter
+    limit.count++;
+    
+    // Calculate effective limit based on past violations
+    let effectiveLimit = actionConfig.max;
+    if (actionConfig.increasing && limit.violations > 0) {
+      // Reduce limit based on violation history (stricter for repeat offenders)
+      effectiveLimit = Math.max(5, Math.floor(effectiveLimit / (1 + limit.violations * 0.5)));
+    }
+    
+    // Check if burst limit available
+    if (limit.count > effectiveLimit && limit.burstRemaining > 0) {
+      limit.burstRemaining--;
+      return false;
+    }
+    
+    // Check if limit exceeded
+    const exceeded = limit.count > effectiveLimit + limit.burstRemaining;
+    
+    // Track violations for adaptive rate limiting
+    if (exceeded) {
+      limit.violations++;
+      limit.lastViolation = now;
+      
+      // Log the violation for analysis
+      console.warn(`Rate limit exceeded for ${action} from IP ${ip}. Violation count: ${limit.violations}`);
+    }
+    
+    // Clean up old entries occasionally
+    if (Math.random() < 0.01) {
+      this.cleanupRateLimits();
+    }
+    
+    return exceeded;
   }
-  
-  // Clean up old entries occasionally
-  if (Math.random() < 0.01) {
-    this.cleanupRateLimits();
-  }
-  
-  return exceeded;
-}
   
   /**
    * Cleans up expired rate limit entries
@@ -230,7 +216,7 @@ static isRateLimited(ip, action) {
     if (!code || typeof code !== 'string') return false;
     
     // Room code should be alphanumeric and within size limit
-    return /^[A-Z0-9]+$/.test(code) && 
+    return /^[A-Za-z0-9]+$/.test(code) && 
            code.length <= this.SIZE_LIMITS.ROOM_CODE;
   }
 
@@ -313,17 +299,6 @@ static isRateLimited(ip, action) {
   }
 
   /**
-   * Validates a CSRF token
-   * @param {string} token - Token to validate
-   * @param {string} sessionId - User's session ID
-   * @param {string} storedToken - Stored token to compare against
-   * @returns {boolean} True if valid, false otherwise
-   */
-  static validateCSRFToken(token, sessionId, storedToken) {
-    return token === storedToken;
-  }
-
-  /**
    * Simple encryption function
    * @param {string} text - Text to encrypt
    * @param {string} key - Encryption key
@@ -371,7 +346,7 @@ static isRateLimited(ip, action) {
    * @returns {string} Random room code
    */
   static generateSecureRoomCode() {
-    return crypto.randomBytes(8).toString('hex').toUpperCase().slice(0, 12);
+    return crypto.randomBytes(6).toString('hex').toUpperCase().slice(0, 12);
   }
 }
 
