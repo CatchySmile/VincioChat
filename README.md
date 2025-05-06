@@ -30,7 +30,7 @@ Scratchy Chat is a secure, ephemeral web-based chat application that allows user
 ## Technologies Used
 
 - **Frontend:**
-  - HTML5, CSS3 with custom variables for theming
+  - HTML5, CSS3
   - Vanilla JavaScript (ES6+)
   - Font Awesome icons and Google Fonts
 
@@ -51,8 +51,14 @@ Scratchy Chat is a secure, ephemeral web-based chat application that allows user
 ```
 Project Root/
 ├── Public/
+│   ├── Public/
+│   │   ├── dark.css             # Global CSS styling
+│   │   ├── legal.css            # Legal Page CSS styling
+│   │   ├── settings.css         # Settings CSS styling
+│   │   ├── themes.css           # Theme CSS styling
+│   │   └── zbase.css            # Inline CSS styling
+│   │ 
 │   ├── index.html               # Main application HTML
-│   ├── styles.css               # Global CSS styling
 │   ├── app.js                   # Frontend logic (Socket.IO client)
 │   ├── error.html               # Error page endpoint
 │   └── legal.html               # Legal information and privacy policy
