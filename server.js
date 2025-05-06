@@ -10,6 +10,8 @@ const helmet = require('helmet');
 const RoomManager = require('./models/RoomManager');
 const SocketHandler = require('./SocketHandler');
 const logger = require('./logger');
+const SecurityUtils = require('./utils/SecurityUtils');
+
 
 // Initialize Express app
 const app = express();
@@ -29,23 +31,73 @@ const io = socketIo(server, {
 app.get('/socket.io/socket.io.js', (req, res) => {
   res.sendFile(require.resolve('socket.io/client-dist/socket.io.js'));
 });
-
-// Add security middleware with Helmet
+// Add more comprehensive security middleware with Helmet
 app.use(helmet());
 
+// Set up Content Security Policy
 app.use(helmet.contentSecurityPolicy({
   directives: {
     defaultSrc: ["'self'"],
     scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-    styleSrc: ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+    styleSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com", "'unsafe-inline'"],
     fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
     imgSrc: ["'self'", "data:"],
     connectSrc: ["'self'", "wss:", "ws:"],
     frameSrc: ["'none'"],
     objectSrc: ["'none'"],
-    upgradeInsecureRequests: []
+    baseUri: ["'self'"],
+    formAction: ["'self'"],
+    frameAncestors: ["'none'"],
+    manifestSrc: ["'self'"],
+    workerSrc: ["'self'"],
+    upgradeInsecureRequests: [],
+    blockAllMixedContent: []
   }
 }));
+
+// Strict Transport Security
+app.use(helmet.hsts({
+  maxAge: 63072000, // 2 years in seconds
+  includeSubDomains: true,
+  preload: true
+}));
+
+// Prevent clickjacking
+app.use(helmet.frameguard({ action: 'deny' }));
+
+// Prevent MIME type sniffing
+app.use(helmet.noSniff());
+
+// XSS protection
+app.use(helmet.xssFilter());
+
+// Disable caching for sensitive routes
+app.use((req, res, next) => {
+  // Skip for static assets that can be cached
+  if (req.path.startsWith('/public/') || 
+      req.path.startsWith('/styles/') || 
+      req.path.includes('.')) {
+    return next();
+  }
+  
+  // Otherwise, apply strict no-cache policy
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
+// Add Referrer-Policy header
+app.use((req, res, next) => {
+  res.setHeader('Referrer-Policy', 'same-origin');
+  next();
+});
+
+// Add Permissions-Policy header (We dont need any!)
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', '');
+  next();
+});
 
 // Use other security headers
 app.use(helmet.xssFilter());
@@ -57,21 +109,36 @@ app.use(helmet.hsts({
   preload: true
 }));
 
-// Rate limiting middleware for HTTP requests
+// Enhanced rate limiting middleware for HTTP requests
 const httpRateLimit = (req, res, next) => {
   const clientIp = req.ip || req.connection.remoteAddress;
   
   // Skip rate limiting for static assets
   if (req.path.startsWith('/public/') || 
       req.path.startsWith('/styles/') || 
-      req.path.startsWith('/public/')) {
+      req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
     return next();
   }
   
+  // Different rate limits based on endpoint type
+  let actionType = 'connections';
+  
+  // Apply stricter limits for authentication routes
+  if (req.path.includes('auth') || req.path.includes('login')) {
+    actionType = 'auth';
+  }
+  
   // Check rate limiting
-  if (clientIp && require('./utils/SecurityUtils').isRateLimited(clientIp, 'connections')) {
-    logger.warn(`HTTP rate limit exceeded for IP: ${clientIp}`);
-    return res.status(429).send('Too Many Requests');
+  if (clientIp && SecurityUtils.isRateLimited(clientIp, actionType)) {
+    logger.warn(`HTTP rate limit exceeded for ${actionType} from IP: ${clientIp}, path: ${req.path}`);
+    
+    // Return 429 status with retry-after header
+    res.status(429);
+    res.setHeader('Retry-After', '60'); // Suggest retry after 60 seconds
+    return res.send({
+      error: 'Too many requests',
+      message: 'Please try again later'
+    });
   }
   
   next();
