@@ -7,6 +7,10 @@ const User = require('./User');
 const SecurityUtils = require('../utils/SecurityUtils');
 const crypto = require('crypto');
 
+// Remove these problematic lines that were causing the error
+// const sessionToken = SecurityUtils.generateSessionToken(socket.id, room.code);
+// const room = this.roomManager.createRoom(socket.id, username, clientIp);
+
 class RoomManager {
   /**
    * Creates a new RoomManager
@@ -163,7 +167,6 @@ class RoomManager {
    * @returns {Room|null} Room data or null if room doesn't exist or is full
    */
   joinRoom(roomCode, userId, username, ip) {
-    // Validate inputs
     if (!roomCode || !userId || !username || !ip) {
       this.logger.warn(`Invalid parameters for joinRoom: ${roomCode}, ${userId}, ${username}`);
       return null;
@@ -173,7 +176,10 @@ class RoomManager {
     const normalizedCode = roomCode.toUpperCase();
     
     const room = this.getRoom(normalizedCode);
-    if (!room) return null;
+    if (!room) {
+      this.logger.warn(`Room not found: ${normalizedCode}`);
+      return null; // Return null instead of trying to use socket
+    }
     
     try {
       // Create and add the user
@@ -349,202 +355,202 @@ class RoomManager {
     }
   }
   
-/**
+  /**
    * Adds a system message to a room
    * @param {string} roomCode - Code of the room
    * @param {string} text - System message content
    * @returns {Message|null} The created message or null if room doesn't exist
    */
-addSystemMessage(roomCode, text) {
-  const room = this.getRoom(roomCode);
-  if (!room) return null;
-  
-  try {
-    // Sanitize even system messages
-    const sanitizedText = SecurityUtils.sanitizeText(text, SecurityUtils.SIZE_LIMITS.MESSAGE);
+  addSystemMessage(roomCode, text) {
+    const room = this.getRoom(roomCode);
+    if (!room) return null;
     
-    // Generate a secure unique ID for the message
-    const messageId = 'system-' + crypto.randomUUID();
-    
-    const message = new Message(messageId, 'System', sanitizedText);
-    
-    // Add to room (bypass rate limiting for system messages)
-    room.addMessage(message, true);
-    
-    return message;
-  } catch (error) {
-    this.logger.warn(`Failed to add system message to room ${roomCode}: ${error.message}`);
-    return null;
-  }
-}
-
-/**
- * Deletes a room and all associated data
- * @param {string} roomCode - Code of the room to delete
- * @returns {boolean} True if room was deleted, false if it didn't exist
- */
-deleteRoom(roomCode) {
-  if (!roomCode) return false;
-  
-  const normalizedCode = roomCode.toUpperCase();
-  if (!this.rooms.has(normalizedCode)) return false;
-  
-  const room = this.rooms.get(normalizedCode);
-  this.logger.info(`Room deleted: ${normalizedCode} (had ${room.users.size} users and ${room.messages.length} messages)`);
-  
-  // Clean up all data
-  this.rooms.delete(normalizedCode);
-  
-  // Return success
-  return true;
-}
-
-/**
- * Checks if a user is the owner of a room
- * @param {string} roomCode - Code of the room
- * @param {string} userId - Socket ID of the user
- * @returns {boolean} True if user is owner, false otherwise
- */
-isRoomOwner(roomCode, userId) {
-  const room = this.getRoom(roomCode);
-  if (!room) return false;
-  
-  return room.isOwner(userId);
-}
-
-/**
- * Gets a room by its code with case-insensitive lookup
- * @param {string} roomCode - Code of the room
- * @returns {Room} The room or null if not found
- */
-getRoom(roomCode) {
-  if (!roomCode) return null;
-  
-  // Case-insensitive room code lookup
-  const normalizedCode = roomCode.toUpperCase();
-  return this.rooms.get(normalizedCode) || null;
-}
-
-/**
- * Checks if a room exists
- * @param {string} roomCode - Code of the room
- * @returns {boolean} True if room exists, false otherwise
- */
-roomExists(roomCode) {
-  if (!roomCode) return false;
-  
-  const normalizedCode = roomCode.toUpperCase();
-  return this.rooms.has(normalizedCode);
-}
-
-/**
- * Gets the total number of active rooms
- * @returns {number} Number of rooms
- */
-getRoomCount() {
-  return this.rooms.size;
-}
-
-/**
- * Gets minimal stats about rooms (for monitoring)
- * Ensures no private data is exposed
- * @returns {Object} Room statistics
- */
-getStats() {
-  const totalUsers = Array.from(this.rooms.values()).reduce(
-    (sum, room) => sum + room.users.size, 0
-  );
-  
-  const totalMessages = Array.from(this.rooms.values()).reduce(
-    (sum, room) => sum + room.messages.length, 0
-  );
-  
-  return {
-    roomCount: this.rooms.size,
-    userCount: totalUsers,
-    messageCount: totalMessages,
-    oldestRoom: this.getOldestRoomAge()
-  };
-}
-
-/**
- * Gets the age in milliseconds of the oldest active room
- * @returns {number} Age in milliseconds or 0 if no rooms
- * @private
- */
-getOldestRoomAge() {
-  if (this.rooms.size === 0) return 0;
-  
-  const now = Date.now();
-  let oldestTime = now;
-  
-  for (const room of this.rooms.values()) {
-    if (room.createdAt < oldestTime) {
-      oldestTime = room.createdAt;
+    try {
+      // Sanitize even system messages
+      const sanitizedText = SecurityUtils.sanitizeText(text, SecurityUtils.SIZE_LIMITS.MESSAGE);
+      
+      // Generate a secure unique ID for the message
+      const messageId = 'system-' + crypto.randomUUID();
+      
+      const message = new Message(messageId, 'System', sanitizedText);
+      
+      // Add to room (bypass rate limiting for system messages)
+      room.addMessage(message, true);
+      
+      return message;
+    } catch (error) {
+      this.logger.warn(`Failed to add system message to room ${roomCode}: ${error.message}`);
+      return null;
     }
   }
-  
-  return now - oldestTime;
-}
 
-/**
- * Sets up periodic cleanup of inactive rooms
- * Runs at configured interval and removes rooms inactive for configured timeout
- */
-initializeCleanupSchedule() {
-  const CLEANUP_INTERVAL = this.config.cleanupInterval;
-  const ROOM_EXPIRY = this.config.roomInactivityTimeout;
-  
-  // Schedule regular cleanup
-  setInterval(() => {
-    const now = Date.now();
-    let deletedCount = 0;
+  /**
+   * Deletes a room and all associated data
+   * @param {string} roomCode - Code of the room to delete
+   * @returns {boolean} True if room was deleted, false if it didn't exist
+   */
+  deleteRoom(roomCode) {
+    if (!roomCode) return false;
     
-    for (const [roomCode, room] of this.rooms.entries()) {
-      // Check if room is inactive or has explicitly expired
-      if (room.isInactive(ROOM_EXPIRY) || room.isExpired()) {
-        this.rooms.delete(roomCode);
-        deletedCount++;
-        this.logger.info(`Room ${roomCode} deleted due to inactivity (${Math.round((now - room.lastActivity) / 3600000)} hours)`);
+    const normalizedCode = roomCode.toUpperCase();
+    if (!this.rooms.has(normalizedCode)) return false;
+    
+    const room = this.rooms.get(normalizedCode);
+    this.logger.info(`Room deleted: ${normalizedCode} (had ${room.users.size} users and ${room.messages.length} messages)`);
+    
+    // Clean up all data
+    this.rooms.delete(normalizedCode);
+    
+    // Return success
+    return true;
+  }
+
+  /**
+   * Checks if a user is the owner of a room
+   * @param {string} roomCode - Code of the room
+   * @param {string} userId - Socket ID of the user
+   * @returns {boolean} True if user is owner, false otherwise
+   */
+  isRoomOwner(roomCode, userId) {
+    const room = this.getRoom(roomCode);
+    if (!room) return false;
+    
+    return room.isOwner(userId);
+  }
+
+  /**
+   * Gets a room by its code with case-insensitive lookup
+   * @param {string} roomCode - Code of the room
+   * @returns {Room} The room or null if not found
+   */
+  getRoom(roomCode) {
+    if (!roomCode) return null;
+    
+    // Case-insensitive room code lookup
+    const normalizedCode = roomCode.toUpperCase();
+    return this.rooms.get(normalizedCode) || null;
+  }
+
+  /**
+   * Checks if a room exists
+   * @param {string} roomCode - Code of the room
+   * @returns {boolean} True if room exists, false otherwise
+   */
+  roomExists(roomCode) {
+    if (!roomCode) return false;
+    
+    const normalizedCode = roomCode.toUpperCase();
+    return this.rooms.has(normalizedCode);
+  }
+
+  /**
+   * Gets the total number of active rooms
+   * @returns {number} Number of rooms
+   */
+  getRoomCount() {
+    return this.rooms.size;
+  }
+
+  /**
+   * Gets minimal stats about rooms (for monitoring)
+   * Ensures no private data is exposed
+   * @returns {Object} Room statistics
+   */
+  getStats() {
+    const totalUsers = Array.from(this.rooms.values()).reduce(
+      (sum, room) => sum + room.users.size, 0
+    );
+    
+    const totalMessages = Array.from(this.rooms.values()).reduce(
+      (sum, room) => sum + room.messages.length, 0
+    );
+    
+    return {
+      roomCount: this.rooms.size,
+      userCount: totalUsers,
+      messageCount: totalMessages,
+      oldestRoom: this.getOldestRoomAge()
+    };
+  }
+
+  /**
+   * Gets the age in milliseconds of the oldest active room
+   * @returns {number} Age in milliseconds or 0 if no rooms
+   * @private
+   */
+  getOldestRoomAge() {
+    if (this.rooms.size === 0) return 0;
+    
+    const now = Date.now();
+    let oldestTime = now;
+    
+    for (const room of this.rooms.values()) {
+      if (room.createdAt < oldestTime) {
+        oldestTime = room.createdAt;
       }
     }
     
-    if (deletedCount > 0) {
-      this.logger.info(`Cleanup: Deleted ${deletedCount} inactive rooms. ${this.rooms.size} rooms remaining.`);
+    return now - oldestTime;
+  }
+
+  /**
+   * Sets up periodic cleanup of inactive rooms
+   * Runs at configured interval and removes rooms inactive for configured timeout
+   */
+  initializeCleanupSchedule() {
+    const CLEANUP_INTERVAL = this.config.cleanupInterval;
+    const ROOM_EXPIRY = this.config.roomInactivityTimeout;
+    
+    // Schedule regular cleanup
+    setInterval(() => {
+      const now = Date.now();
+      let deletedCount = 0;
+      
+      for (const [roomCode, room] of this.rooms.entries()) {
+        // Check if room is inactive or has explicitly expired
+        if (room.isInactive(ROOM_EXPIRY) || room.isExpired()) {
+          this.rooms.delete(roomCode);
+          deletedCount++;
+          this.logger.info(`Room ${roomCode} deleted due to inactivity (${Math.round((now - room.lastActivity) / 3600000)} hours)`);
+        }
+      }
+      
+      if (deletedCount > 0) {
+        this.logger.info(`Cleanup: Deleted ${deletedCount} inactive rooms. ${this.rooms.size} rooms remaining.`);
+      }
+      
+      // Periodically clean up rate limit tracking
+      if (Math.random() < 0.1) { // 10% chance each cleanup
+        this.cleanupRateLimitTracking();
+      }
+    }, CLEANUP_INTERVAL);
+    
+    this.logger.info('Room cleanup schedule initialized');
+  }
+
+  /**
+   * Clean up stale rate limit tracking data
+   * @private
+   */
+  cleanupRateLimitTracking() {
+    const now = Date.now();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    
+    // Clean entries older than 24 hours
+    let cleanedEntries = 0;
+    
+    // Clean up IP room counter for IPs with 0 rooms
+    for (const [ipHash, count] of this.ipRoomCounter.entries()) {
+      if (count <= 0) {
+        this.ipRoomCounter.delete(ipHash);
+        cleanedEntries++;
+      }
     }
     
-    // Periodically clean up rate limit tracking
-    if (Math.random() < 0.1) { // 10% chance each cleanup
-      this.cleanupRateLimitTracking();
-    }
-  }, CLEANUP_INTERVAL);
-  
-  this.logger.info('Room cleanup schedule initialized');
-}
-
-/**
- * Clean up stale rate limit tracking data
- * @private
- */
-cleanupRateLimitTracking() {
-  const now = Date.now();
-  const twentyFourHours = 24 * 60 * 60 * 1000;
-  
-  // Clean entries older than 24 hours
-  let cleanedEntries = 0;
-  
-  // Clean up IP room counter for IPs with 0 rooms
-  for (const [ipHash, count] of this.ipRoomCounter.entries()) {
-    if (count <= 0) {
-      this.ipRoomCounter.delete(ipHash);
-      cleanedEntries++;
+    if (cleanedEntries > 0) {
+      this.logger.debug(`Cleaned up ${cleanedEntries} rate limit tracking entries`);
     }
   }
-  
-  if (cleanedEntries > 0) {
-    this.logger.debug(`Cleaned up ${cleanedEntries} rate limit tracking entries`);
-  }
-}
 }
 
 module.exports = RoomManager;
