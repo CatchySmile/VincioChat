@@ -379,12 +379,22 @@ input[type="text"]:focus {
 #messages {
   padding-bottom: 10px;
   list-style: none;
+  display: flex;
+  flex-direction: column;
 }
 
 #messages li {
   margin-bottom: var(--space-md);
   word-wrap: break-word;
   animation: messageAppear 0.3s ease-out;
+  max-width: 80%;
+  background-color: var(--bg-tertiary);
+  align-self: flex-start; /* Default alignment for other users' messages */
+
+}
+
+#messages li.self-message {
+  align-self: flex-end; /* Right alignment for user's own messages */
 }
 
 @keyframes messageAppear {
@@ -402,12 +412,24 @@ input[type="text"]:focus {
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-lg);
   background-color: var(--bg-tertiary);
-  display: inline-block;
-  max-width: 80%;
-  box-shadow: 0 2px 5px var(--shadow-light);
+  display: flex;
+  flex-direction: column;
   position: relative;
-  word-break: break-word; /* Prevent long words from breaking the layout */
-  hyphens: auto; /* Allow hyphenation for better text wrapping */
+  word-break: break-word;
+  hyphens: auto;
+  box-shadow: 0 2px 5px var(--shadow-light);
+}
+
+/* Self Message Styling */
+.self-message .message {
+  background-color: var(--accent-tertiary);
+}
+
+/* User Avatar Styling */
+.message-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .message .username {
@@ -415,6 +437,31 @@ input[type="text"]:focus {
   color: var(--accent-primary);
   margin-bottom: 0.25rem;
   font-size: 0.9rem;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px var(--shadow-light);
+  border: 2px solid var(--border-color);
+}
+.self-message .avatar {
+  order: 1; /* Move avatar to the right for self messages */
+  background-color: var(--accent-primary);
+}
+
+/* Keep system messages centered and avatar-less */
+li.system-message {
+  align-self: center;
+  max-width: 80%;
 }
 
 .message .text {
