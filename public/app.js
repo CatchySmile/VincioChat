@@ -272,6 +272,60 @@ function confirmLeaveRoom() {
   leaveRoom();
 }
 
+// Use the showToast function from settings.js if available, otherwise define a fallback
+if (!window.showToast) {
+  // Define fallback only if settings.js hasn't loaded or failed
+  window.showToast = function(message, type = 'info') {
+    console.warn('Using fallback toast implementation - settings.js may not be loaded');
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    
+    // Create toast element with safely escaped content
+    const toast = document.createElement('div');
+    toast.classList.add('toast', type);
+    
+    // Add icon based on toast type
+    const icon = document.createElement('i');
+    icon.style.marginRight = '8px';
+    
+    switch(type) {
+      case 'success':
+        icon.className = 'fas fa-check-circle';
+        icon.style.color = 'var(--success)';
+        break;
+      case 'error':
+        icon.className = 'fas fa-exclamation-circle';
+        icon.style.color = 'var(--danger)';
+        break;
+      default:
+        icon.className = 'fas fa-info-circle';
+        icon.style.color = 'var(--accent-primary)';
+    }
+    
+    // Create message text element
+    const messageText = document.createElement('span');
+    messageText.textContent = message; // Using textContent prevents XSS
+    
+    // Add elements to toast
+    toast.appendChild(icon);
+    toast.appendChild(messageText);
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(20px)';
+      setTimeout(() => {
+        if (toast.parentNode === toastContainer) {
+          toastContainer.removeChild(toast);
+        }
+      }, 300);
+    }, 3000);
+  };
+}
+
 function leaveRoom() {
   if (state.currentRoom) {
     socket.emit('leaveRoom', state.currentRoom);
@@ -445,7 +499,105 @@ function toggleModal(modal, show) {
   }
 }
 
-// First, let's fix the updateUsersList function to properly show kick buttons
+
+let usingKeyboard = false;
+
+// Detect keyboard navigation
+document.addEventListener('keydown', function() {
+  if (!usingKeyboard) {
+    document.body.classList.add('keyboard-nav');
+    usingKeyboard = true;
+  }
+});
+
+// Remove keyboard navigation class when mouse is used
+document.addEventListener('mousedown', function() {
+  if (usingKeyboard) {
+    document.body.classList.remove('keyboard-nav');
+    usingKeyboard = false;
+  }
+});
+
+// Initialize settings when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize settings
+  if (window.settingsManager) {
+    window.settingsManager.initialize();
+    
+    // Register observer for settings changes
+    window.settingsManager.addObserver(function(newSettings) {
+      console.log('Settings updated:', newSettings);
+      
+      // Apply timestamp visibility to any new messages
+      if (newSettings.showTimestamps !== undefined) {
+        updateTimestampsVisibility(newSettings.showTimestamps);
+      }
+    });
+  } else {
+    console.error('Settings manager not available!');
+  }
+});
+/**
+ * Update visibility of all message timestamps
+ * @param {boolean} show - Whether to show timestamps
+ */
+function updateTimestampsVisibility(show) {
+  document.querySelectorAll('.timestamp').forEach(timestamp => {
+    timestamp.style.display = show ? 'block' : 'none';
+  });
+}
+
+// Modify the addMessage function to respect settings
+function addMessage(message) {
+  // Filter out system messages (that have "System" as username)
+  if (message.username === "System") {
+    return; // Skip rendering these messages
+  }
+
+  const li = document.createElement('li');
+  
+  // Format timestamp
+  const timestamp = new Date(message.timestamp).toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  // Create message content
+  const messageElement = document.createElement('div');
+  messageElement.classList.add('message');
+  
+  // Username
+  const usernameElement = document.createElement('div');
+  usernameElement.classList.add('username');
+  usernameElement.textContent = message.username;
+  messageElement.appendChild(usernameElement);
+  
+  // Message text
+  const textElement = document.createElement('div');
+  textElement.classList.add('text');
+  textElement.textContent = message.text;
+  messageElement.appendChild(textElement);
+  
+  // Timestamp - respect settings
+  const timestampElement = document.createElement('div');
+  timestampElement.classList.add('timestamp');
+  timestampElement.textContent = timestamp;
+  
+  // Apply current timestamp visibility setting
+  if (window.settingsManager) {
+    const settings = window.settingsManager.getSettings();
+    timestampElement.style.display = settings.showTimestamps ? 'block' : 'none';
+  }
+  
+  messageElement.appendChild(timestampElement);
+  
+  li.appendChild(messageElement);
+  messagesContainer.appendChild(li);
+  
+  // Scroll to bottom
+  scrollToBottom();
+}
+//
 function updateUsersList() {
   userList.innerHTML = '';
   
