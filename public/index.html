@@ -12,6 +12,88 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Emergency modal override styles */
+        .modal {
+            display: none;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(10, 10, 15, 0.85) !important;
+            z-index: 9999 !important;
+            align-items: center !important;
+            justify-content: center !important;
+            backdrop-filter: blur(4px) !important;
+        }
+        
+        #toast-container {
+            position: fixed !important;
+            top: 1rem !important; 
+            right: 1rem !important;
+            z-index: 10001 !important;
+        }
+        </style>
+        
+        <script>
+        // Emergency modal fix - ensures modals will display over everything
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force show modal function that overrides any styling issues
+            window.forceShowModal = function(modalId) {
+                const modal = document.getElementById(modalId);
+                if (!modal) return false;
+                
+                modal.style.cssText = `
+                    display: flex !important;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    bottom: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    background-color: rgba(10, 10, 15, 0.85) !important;
+                    z-index: 9999 !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                `;
+                
+                return true;
+            };
+            
+            // Add emergency overrides to settings button
+            const settingsBtn = document.getElementById('settings-btn');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    forceShowModal('settings-modal');
+                });
+            }
+            
+            // Add emergency overrides to users button
+            const showUsersBtn = document.getElementById('show-users-btn');
+            if (showUsersBtn) {
+                showUsersBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    forceShowModal('users-modal');
+                });
+            }
+            
+            // Add emergency overrides to leave button
+            const leaveRoomBtn = document.getElementById('leave-room-btn');
+            if (leaveRoomBtn) {
+                leaveRoomBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    forceShowModal('leave-confirm-modal');
+                });
+            }
+            
+            console.log('Emergency modal fixes applied');
+        });
+        </script>
 </head>
 <body>
     <div class="container">
@@ -30,7 +112,6 @@
                 <a href="#" id="tos-link">Terms of Service & Privacy Policy</a>
             </p>
         </div>
-
         
         <!-- Room Selection Screen -->
         <div id="room-selection" class="hidden">
@@ -44,10 +125,11 @@
             <div class="card">
                 <h3><i class="fas fa-sign-in-alt"></i> Join Existing Room</h3>
                 <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    Enter a room code to join an existing conversation
                 </p>
                 
                 <div class="input-group">
-                    <input type="text" id="room-code-input" placeholder="Enter 12-digit room code" maxlength="12">
+                    <input type="text" id="room-code-input" placeholder="Enter room code" maxlength="12">
                 </div>
                 <button id="join-room-btn" class="primary-btn">Join Room</button>
             </div>
@@ -56,7 +138,7 @@
         <!-- Chat Room Screen -->
         <div id="chat-room" class="hidden">
             <div class="chat-header">
-                <h2>Room: <span class="span" id="room-code-display"></span></h2>
+                <h2>Room: <span id="room-code-display"></span></h2>
                 <div class="chat-controls">
                     <button id="settings-btn" class="icon-btn" title="Settings">
                       <i class="fas fa-cog"></i>
@@ -70,7 +152,6 @@
                     <button id="leave-room-btn" class="icon-btn warning" title="Leave room">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
-                    
                 </div>
             </div>
             <div class="chat-content">
@@ -87,6 +168,13 @@
         </div>
     </div>
 
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Load Socket.IO client from server -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- MODALS - Moved to root level outside container -->
     <!-- User List Modal -->
     <div id="users-modal" class="modal">
         <div class="modal-content">
@@ -94,7 +182,9 @@
                 <h3><i class="fas fa-users"></i> Users in Room</h3>
                 <button class="close-modal">&times;</button>
             </div>
-            <ul id="user-list"></ul>
+            <div class="modal-body">
+                <ul id="user-list"></ul>
+            </div>
             <div class="modal-footer admin-controls hidden">
                 <button id="delete-room-btn" class="danger-btn">
                     <i class="fas fa-trash-alt"></i> Delete Room
@@ -202,134 +292,121 @@
         </div>
     </div>
 
-<!-- Enhanced Settings Modal -->
-<div id="settings-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fas fa-cog"></i> Settings</h3>
-        <button class="close-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <!-- Theme Settings -->
-        <div class="settings-section theme">
-          <h4>Appearance</h4>
-          
-          <!-- Theme Selection -->
-          <div class="settings-option">
-            <label for="theme-select">Theme:</label>
-            <select id="theme-select">
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-              <option value="material">Material</option>
-              <option value="mint">Mint</option>
-              <option value="blackred">Midnight Red</option>
-              <option value="matrix">Matrix</option>
-            </select>
-            <div class="preview-info">
-              <i class="fas fa-eye"></i> Preview is active
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="close-modal">&times;</button>
             </div>
-          </div>
-        </div>
-          
-          <!-- Accent Color -->
-          <div class="settings-option">
-            <label for="accent-color-select">Accent Color:</label>
-            <select id="accent-color-select">
-              <option value="purple">Purple</option>
-              <option value="blue">Blue</option>
-              <option value="red">Red</option>
-              <option value="green">Green</option>
-              <option value="pink">Pink</option>
-              <option value="black">Black</option>
-              <div class="preview-info">
-                <i class="fas fa-eye"></i> Preview is active
-              </div>
+            <div class="modal-body">
+                <!-- Theme Settings -->
+                <div class="settings-section theme">
+                    <h4>Appearance</h4>
+                    
+                    <!-- Theme Selection -->
+                    <div class="settings-option">
+                        <label for="theme-select">Theme:</label>
+                        <select id="theme-select">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                            <option value="material">Material</option>
+                            <option value="mint">Mint</option>
+                            <option value="blackred">Midnight Red</option>
+                            <option value="matrix">Matrix</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Accent Color -->
+                    <div class="settings-option">
+                        <label for="accent-color-select">Accent Color:</label>
+                        <select id="accent-color-select">
+                            <option value="purple">Purple</option>
+                            <option value="blue">Blue</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="pink">Pink</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Font Size -->
+                    <div class="settings-option">
+                        <label for="font-size-select">Font Size:</label>
+                        <select id="font-size-select">
+                            <option value="small">Small</option>
+                            <option value="medium">Medium</option>
+                            <option value="large">Large</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Notification Settings -->
+                <div class="settings-section notifications">
+                    <h4>Notifications</h4>
+                    
+                    <!-- Sound Notifications -->
+                    <div class="settings-option">
+                        <label for="notification-toggle">Enable toasts</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notification-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Toast Duration -->
+                    <div class="settings-option">
+                        <label for="toast-duration-select">Toast Duration:</label>
+                        <select id="toast-duration-select">
+                            <option value="2000">Short (2s)</option>
+                            <option value="3000">Normal (3s)</option>
+                            <option value="5000">Long (5s)</option>
+                            <option value="8000">Extra Long (8s)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Message Settings -->
+                <div class="settings-section messages">
+                    <h4>Messages</h4>
+                    
+                    <!-- Show Timestamps -->
+                    <div class="settings-option">
+                        <label for="message-timestamp-toggle">Show timestamps</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="message-timestamp-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
-          </div>
-          
-          <!-- Font Size -->
-          <div class="settings-option">
-            <label for="font-size-select">Font Size:</label>
-            <select id="font-size-select">
-              <option value="small">Small</option>
-              <option value="medium">Medium</option>
-              <option value="large">Large</option>
-            </select>
-          </div>
+            <div class="modal-footer">
+                <button id="reset-settings-btn" class="secondary-btn">Reset Defaults</button>
+                <button id="save-settings-btn" class="primary-btn">Save Settings</button>
+            </div>
         </div>
-        
-        <!-- Notification Settings -->
-        <div class="settings-section notifications">
-          <h4>Notifications</h4>
-          
-          <!-- Sound Notifications -->
-          <div class="settings-option">
-            <label for="notification-toggle">Enable notifications</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="notification-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          
-          <!-- Toast Duration -->
-          <div class="settings-option">
-            <label for="toast-duration-select">Toast Duration:</label>
-            <select id="toast-duration-select">
-              <option value="2000">Short (2s)</option>
-              <option value="3000">Normal (3s)</option>
-              <option value="5000">Long (5s)</option>
-              <option value="8000">Extra Long (8s)</option>
-            </select>
-          </div>
-        </div>
-        
-        <!-- Message Settings -->
-        <div class="settings-section messages">
-          <h4>Messages</h4>
-          
-          <!-- Show Timestamps -->
-          <div class="settings-option">
-            <label for="message-timestamp-toggle">Show timestamps</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="message-timestamp-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="reset-settings-btn" class="secondary-btn">Reset Defaults</button>
-        <button id="save-settings-btn" class="primary-btn">Save Settings</button>
-      </div>
     </div>
-  </div>
-        
-        <!-- Message Settings -->
-        <div class="settings-section messages">
-          <h4>Messages</h4>
-          <div class="settings-option">
-            <label for="message-timestamp-toggle">Show timestamps</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="message-timestamp-toggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+    
+    <!-- Kick User Modal (Created dynamically via JS) -->
+    <div id="kick-confirm-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-slash"></i> Kick User</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to kick <span id="kick-username"></span> from the room?</p>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                    This user will not be able to rejoin unless they know the room code.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-kick-btn" class="danger-btn">Yes, Kick User</button>
+                <button id="cancel-kick-btn" class="primary-btn">Cancel</button>
+            </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button id="cancel-settings-btn" class="secondary-btn" onclick="window.settingsManager.cancelPreviews(); toggleModal(document.getElementById('settings-modal'), false);">
-            Cancel
-          </button>
-        <button class="primary-btn" id="save-settings-btn">Save Settings</button>
-      </div>
     </div>
-  </div>
 
-    <!-- Toast Notifications -->
-    <div id="toast-container"></div>
-
-    <!-- Load Socket.IO client from CDN (for development) -->
-    <script src="/socket.io/socket.io.js"></script>
     <script src="settings.js"></script>
     <script src="app.js"></script>
 </body>
