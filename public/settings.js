@@ -1,251 +1,698 @@
-// Enhanced Settings Management
+// settings.js - Complete refactor
 
-// Define default settings
-const DEFAULT_SETTINGS = {
-    theme: 'dark',
-    accentColor: 'purple',
-    notificationsEnabled: true,
-    toastDuration: 3000,
-    showTimestamps: true,
-  };
-  
-  // Current settings object
-  let currentSettings = { ...DEFAULT_SETTINGS };
-  
-  // DOM Elements for settings
-  const settingsModal = document.getElementById('settings-modal');
-  const saveSettingsBtn = document.getElementById('save-settings-btn');
-  const themeSelect = document.getElementById('theme-select');
-  const accentColorSelect = document.getElementById('accent-color-select');
-  const notificationToggle = document.getElementById('notification-toggle');
-  const toastDurationSelect = document.getElementById('toast-duration-select');
-  const timestampToggle = document.getElementById('message-timestamp-toggle');
-  
-  // Initialize settings
-  function initializeSettings() {
-    // Event listener for settings button
-    const settingsBtn = document.getElementById('settings-btn');
-    if (settingsBtn) {
-      settingsBtn.addEventListener('click', () => toggleModal(settingsModal, true));
-    }
+/**
+ * Secure Settings Management System
+ * Handles user preferences with validation and sanitization
+ */
+
+// Strict setting definitions with validation rules
+const SETTINGS_SCHEMA = {
+  theme: {
+    type: 'string',
+    allowed: ['dark', 'light', 'material', 'mint', 'blackred', 'matrix'],
+    default: 'dark',
+    validate: value => SETTINGS_SCHEMA.theme.allowed.includes(value)
+  },
+  accentColor: {
+    type: 'string',
+    allowed: ['purple', 'blue', 'red', 'green', 'pink', 'black'],
+    default: 'purple',
+    validate: value => SETTINGS_SCHEMA.accentColor.allowed.includes(value)
+  },
+  notifications: {
+    type: 'boolean',
+    default: false,
+    validate: value => typeof value === 'boolean'
+  },
+  toastDuration: {
+    type: 'number',
+    allowed: [2000, 3000, 5000, 8000],
+    default: 3000,
+    validate: value => SETTINGS_SCHEMA.toastDuration.allowed.includes(Number(value))
+  },
+  showTimestamps: {
+    type: 'boolean',
+    default: true,
+    validate: value => typeof value === 'boolean'
+  },
+  fontSize: {
+    type: 'string',
+    allowed: ['small', 'medium', 'large'],
+    default: 'medium',
+    validate: value => SETTINGS_SCHEMA.fontSize.allowed.includes(value)
+  }
+};
+
+// Current settings with immutable getters
+class SettingsManager {
+  constructor() {
+    this._settings = this._getDefaultSettings();
+    this._observers = [];
+    this._initialized = false;
+  }
+
+  /**
+   * Get default settings values
+   * @private
+   * @returns {Object} Default settings
+   */
+  _getDefaultSettings() {
+    const defaults = {};
+    Object.entries(SETTINGS_SCHEMA).forEach(([key, schema]) => {
+      defaults[key] = schema.default;
+    });
+    return defaults;
+  }
+
+  /**
+   * Validates a setting against its schema
+   * @private
+   * @param {string} key - Setting key
+   * @param {any} value - Value to validate
+   * @returns {boolean} True if valid
+   */
+  _validateSetting(key, value) {
+    const schema = SETTINGS_SCHEMA[key];
+    if (!schema) return false;
     
-    // Event listener for save settings button
-    if (saveSettingsBtn) {
-      saveSettingsBtn.addEventListener('click', saveSettings);
-    }
-  
-    // Load settings from localStorage
-    loadSettings();
+    return schema.validate(value);
+  }
+
+  /**
+   * Sanitizes all settings to ensure they match schema
+   * @private
+   * @param {Object} settings - Settings object to sanitize
+   * @returns {Object} Sanitized settings
+   */
+  _sanitizeSettings(settings) {
+    const sanitized = { ...this._getDefaultSettings() };
     
-    // Apply settings immediately
-    applySettings(currentSettings);
+    Object.entries(settings).forEach(([key, value]) => {
+      if (SETTINGS_SCHEMA[key] && this._validateSetting(key, value)) {
+        sanitized[key] = value;
+      }
+    });
+    
+    return sanitized;
+  }
+
+
+/**
+ * Preview a theme without saving
+ * @public
+ * @param {string} theme - Theme to preview
+ */
+previewTheme(theme) {
+  // Validate theme
+  if (!SETTINGS_SCHEMA.theme.allowed.includes(theme)) {
+    console.error(`Invalid theme: ${theme}`);
+    return;
   }
   
-  // Save settings to localStorage
-  function saveSettings() {
-    // Collect settings from form elements
-    const newSettings = {
-      theme: themeSelect.value,
-      accentColor: accentColorSelect.value,
-      notificationsEnabled: notificationToggle.checked,
-      toastDuration: parseInt(toastDurationSelect.value),
-      showTimestamps: timestampToggle.checked,
-    };
-    
-    // Update current settings
-    currentSettings = { ...newSettings };
-    
-    // Save to localStorage
-    localStorage.setItem('scratchyChatSettings', JSON.stringify(currentSettings));
-    
-    // Apply the new settings
-    applySettings(currentSettings);
-    
-    // Show confirmation and close modal
-    showToast('Settings saved successfully', 'success');
-    toggleModal(settingsModal, false);
-  }
+  // Store current theme for reverting
+  this._previewOriginalTheme = this._settings.theme;
   
-  // Load settings from localStorage
-  function loadSettings() {
+  // Apply the preview theme
+  this._applyTheme(theme);
+}
+
+  /**
+   * Preview an accent color without saving
+   * @public
+   * @param {string} color - Accent color to preview
+   */
+  previewAccentColor(color) {
+    // Validate color
+    if (!SETTINGS_SCHEMA.accentColor.allowed.includes(color)) {
+      console.error(`Invalid accent color: ${color}`);
+      return;
+    }
+    
+    // Store current color for reverting
+    this._previewOriginalColor = this._settings.accentColor;
+    
+    // Apply the preview color
+    this._applyAccentColor(color);
+  }
+
+  /**
+   * Cancel any active previews
+   * @public
+   */
+  cancelPreviews() {
+    // Revert theme if previewing
+    if (this._previewOriginalTheme) {
+      this._applyTheme(this._previewOriginalTheme);
+      this._previewOriginalTheme = null;
+    }
+    
+    // Revert accent color if previewing
+    if (this._previewOriginalColor) {
+      this._applyAccentColor(this._previewOriginalColor);
+      this._previewOriginalColor = null;
+    }
+  }
+
+  /**
+   * Initialize settings from localStorage with XSS protection
+   * @public
+   */
+  initialize() {
+    if (this._initialized) return;
+    
     try {
-      const savedSettings = localStorage.getItem('scratchyChatSettings');
+      const storedSettings = localStorage.getItem('scratchyChatSettings');
       
-      if (savedSettings) {
-        // Parse saved settings
-        const parsedSettings = JSON.parse(savedSettings);
-        
-        // Merge with defaults (in case new settings were added)
-        currentSettings = { ...DEFAULT_SETTINGS, ...parsedSettings };
+      if (storedSettings) {
+        // Try-catch to handle invalid JSON
+        try {
+          const parsedSettings = JSON.parse(storedSettings);
+          // Sanitize settings to prevent XSS or invalid values
+          this._settings = this._sanitizeSettings(parsedSettings);
+        } catch (error) {
+          console.error('Failed to parse settings from localStorage:', error);
+          // Reset to defaults on parse error
+          this._settings = this._getDefaultSettings();
+        }
       }
       
-      // Update form elements to reflect current settings
-      updateSettingsForm();
-      
+      // Apply settings immediately
+      this.applySettings();
+      this._initialized = true;
     } catch (error) {
-      console.error('Error loading settings:', error);
-      // If there's an error, reset to defaults
-      currentSettings = { ...DEFAULT_SETTINGS };
+      console.error('Error initializing settings:', error);
+      // Fallback to defaults on any error
+      this._settings = this._getDefaultSettings();
     }
   }
+
+/**
+ * Validate CSS color to prevent CSS injection attacks
+ * @private
+ * @param {string} color - CSS color string to validate
+ * @returns {boolean} True if valid
+ */
+_isValidCSSColor(color) {
+  // Only allow valid hex colors or specific named colors
+  const hexPattern = /^#([0-9A-F]{3}){1,2}$/i;
+  const allowedNamedColors = [
+    'black', 'white', 'red', 'green', 'blue', 'yellow', 
+    'purple', 'pink', 'orange', 'cyan', 'magenta', 'gray'
+  ];
   
-  // Update settings form to reflect current settings
-  function updateSettingsForm() {
-    // Set form values based on current settings
-    themeSelect.value = currentSettings.theme;
-    accentColorSelect.value = currentSettings.accentColor;
-    notificationToggle.checked = currentSettings.notificationsEnabled;
-    toastDurationSelect.value = currentSettings.toastDuration.toString();
-    timestampToggle.checked = currentSettings.showTimestamps;
+  return hexPattern.test(color) || allowedNamedColors.includes(color);
+}
+
+/**
+ * Validate CSS gradient to prevent CSS injection
+ * @private
+ * @param {string} gradient - CSS gradient string to validate
+ * @returns {boolean} True if valid
+ */
+_isValidCSSGradient(gradient) {
+  // Only allow linear-gradient with specific pattern
+  const safePattern = /^linear-gradient\(135deg, #([0-9A-F]{3}){1,2}, #([0-9A-F]{3}){1,2}\)$/i;
+  return safePattern.test(gradient);
+}
+
+  /**
+   * Safely set a CSS custom property
+   * @private
+   * @param {HTMLElement} element - Element to set property on
+   * @param {string} property - CSS property name
+   * @param {string} value - CSS property value
+   */
+  _safelySetCSSProperty(element, property, value) {
+    // Validate property name (only allow specific properties)
+    const allowedProperties = [
+      '--accent-primary', '--accent-secondary', '--accent-tertiary', '--accent-hover',
+      '--gradient-accent', '--gradient-accent-hover', '--base-font-size'
+    ];
+    
+    if (!allowedProperties.includes(property)) {
+      console.error(`Attempted to set disallowed CSS property: ${property}`);
+      return;
+    }
+    
+    // Validate the value based on property type
+    let isValid = false;
+    
+    if (property.startsWith('--accent')) {
+      isValid = this._isValidCSSColor(value);
+    } else if (property.startsWith('--gradient')) {
+      isValid = this._isValidCSSGradient(value);
+    } else if (property === '--base-font-size') {
+      isValid = /^\d+(\.\d+)?rem$/.test(value);
+    }
+    
+    if (!isValid) {
+      console.error(`Invalid value for CSS property ${property}: ${value}`);
+      return;
+    }
+    
+    // Apply the validated property
+    element.style.setProperty(property, value);
   }
-  
-  // Apply settings to the UI
-  function applySettings(settings) {
+
+  /**
+   * Get current settings (read-only)
+   * @public
+   * @returns {Object} Current settings
+   */
+  getSettings() {
+    // Return a deep copy to prevent modification
+    return JSON.parse(JSON.stringify(this._settings));
+  }
+
+  /**
+   * Update specific settings with validation
+   * @public
+   * @param {Object} newSettings - New settings to apply
+   * @returns {boolean} Success status
+   */
+  updateSettings(newSettings) {
+    if (!newSettings || typeof newSettings !== 'object') return false;
+    
+    let isValid = true;
+    const updates = {};
+    
+    // Validate each setting before applying
+    Object.entries(newSettings).forEach(([key, value]) => {
+      if (SETTINGS_SCHEMA[key]) {
+        if (this._validateSetting(key, value)) {
+          updates[key] = value;
+        } else {
+          console.warn(`Invalid setting value: ${key}=${value}`);
+          isValid = false;
+        }
+      }
+    });
+    
+    if (!isValid) return false;
+    
+    // Apply valid updates
+    this._settings = { ...this._settings, ...updates };
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem('scratchyChatSettings', JSON.stringify(this._settings));
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      return false;
+    }
+    
+    // Apply the settings to the UI
+    this.applySettings();
+    
+    // Notify observers
+    this._notifyObservers();
+    
+    return true;
+  }
+
+  /**
+   * Reset settings to defaults
+   * @public
+   */
+  resetSettings() {
+    this._settings = this._getDefaultSettings();
+    
+    try {
+      localStorage.setItem('scratchyChatSettings', JSON.stringify(this._settings));
+    } catch (error) {
+      console.error('Failed to save default settings:', error);
+    }
+    
+    this.applySettings();
+    this._notifyObservers();
+  }
+
+  /**
+   * Register a settings change observer
+   * @public
+   * @param {Function} callback - Observer callback
+   */
+  addObserver(callback) {
+    if (typeof callback === 'function') {
+      this._observers.push(callback);
+    }
+  }
+
+  /**
+   * Remove a settings observer
+   * @public
+   * @param {Function} callback - Observer to remove
+   */
+  removeObserver(callback) {
+    this._observers = this._observers.filter(obs => obs !== callback);
+  }
+
+  /**
+   * Notify all observers of settings changes
+   * @private
+   */
+  _notifyObservers() {
+    const settings = this.getSettings();
+    this._observers.forEach(callback => {
+      try {
+        callback(settings);
+      } catch (error) {
+        console.error('Error in settings observer:', error);
+      }
+    });
+  }
+
+  /**
+   * Apply current settings to the UI
+   * @public
+   */
+  applySettings() {
     // Apply theme
-    document.documentElement.classList.toggle('light-theme', settings.theme === 'light');
-    document.documentElement.classList.toggle('mint-breeze', settings.theme === 'mint');
-    document.documentElement.classList.toggle('material-theme', settings.theme === 'material');
-    document.documentElement.classList.toggle('modern-black-red', settings.theme === 'blackred');
-    document.documentElement.classList.toggle('matrix-theme', settings.theme === 'matrix');
-
-
+    this._applyTheme(this._settings.theme);
     
     // Apply accent color
-    applyAccentColor(settings.accentColor);
+    this._applyAccentColor(this._settings.accentColor);
     
+    // Apply font size
+    this._applyFontSize(this._settings.fontSize);
     
     // Apply timestamp visibility
-    applyTimestampVisibility(settings.showTimestamps);
+    this._applyTimestampVisibility(this._settings.showTimestamps);
     
-    // Update toast duration
-    window.toastDuration = settings.toastDuration;
+    // Apply toast duration to global variable for toast system
+    window.toastDuration = this._settings.toastDuration;
   }
-  
-  // Apply the selected accent color
-  function applyAccentColor(color) {
+
+  /**
+   * Apply the selected theme
+   * @private
+   * @param {string} theme - Theme name
+   */
+  _applyTheme(theme) {
+    // Safety check
+    if (!SETTINGS_SCHEMA.theme.allowed.includes(theme)) {
+      theme = SETTINGS_SCHEMA.theme.default;
+    }
+    
+    // Remove all theme classes
+    SETTINGS_SCHEMA.theme.allowed.forEach(themeName => {
+      if (themeName === 'dark') {
+        document.documentElement.classList.toggle('light-theme', false);
+      } else {
+        document.documentElement.classList.toggle(`${themeName}-theme`, false);
+      }
+    });
+    
+    // Add the selected theme class
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    } else if (theme !== 'dark') {
+      document.documentElement.classList.add(`${theme}-theme`);
+    }
+  }
+
+  /**
+   * Apply the selected accent color
+   * @private
+   * @param {string} color - Accent color name
+   */
+  _applyAccentColor(color) {
+    // Safety check
+    if (!SETTINGS_SCHEMA.accentColor.allowed.includes(color)) {
+      color = SETTINGS_SCHEMA.accentColor.default;
+    }
+    
     // Remove any existing accent color classes
-    document.documentElement.classList.remove('accent-purple', 'accent-blue', 'accent-red', 'accent-green', 'accent-pink');
+    SETTINGS_SCHEMA.accentColor.allowed.forEach(colorName => {
+      document.documentElement.classList.remove(`accent-${colorName}`);
+    });
     
-    // Add the selected accent color class
-    document.documentElement.classList.add(`accent-${color}`);
+    // Only add class if not default purple
+    if (color !== 'purple') {
+      document.documentElement.classList.add(`accent-${color}`);
+    }
     
-    // Apply CSS variables for the accent color
+    // Apply CSS variables based on color
     const root = document.documentElement;
     
     switch (color) {
       case 'blue':
-        root.style.setProperty('--accent-primary', '#4285f4');
-        root.style.setProperty('--accent-secondary', '#3367d6');
-        root.style.setProperty('--accent-tertiary', '#2a56c6');
-        root.style.setProperty('--accent-hover', '#5a95f5');
+        this._setThemeVariables(root, '#4285f4', '#3367d6', '#2a56c6', '#5a95f5');
         break;
       case 'red':
-        root.style.setProperty('--accent-primary', '#ff3333');
-        root.style.setProperty('--accent-secondary', '#e60000');
-        root.style.setProperty('--accent-tertiary', '#800000');
-        root.style.setProperty('--accent-hover', '#660000');
+        this._setThemeVariables(root, '#ff3333', '#e60000', '#cc0000', '#ff5c5c');
         break;
       case 'green':
-        root.style.setProperty('--accent-primary', '#34a853');
-        root.style.setProperty('--accent-secondary', '#2e9549');
-        root.style.setProperty('--accent-tertiary', '#1e8e3e');
-        root.style.setProperty('--accent-hover', '#46bf65');
+        this._setThemeVariables(root, '#34a853', '#2e9549', '#1e8e3e', '#46bf65');
         break;
       case 'pink':
-        root.style.setProperty('--accent-primary', '#e84e8a');
-        root.style.setProperty('--accent-secondary', '#d84177');
-        root.style.setProperty('--accent-tertiary', '#c13b6b');
-        root.style.setProperty('--accent-hover', '#ec699b');
+        this._setThemeVariables(root, '#e84e8a', '#d84177', '#c13b6b', '#ec699b');
         break;
       case 'black':
-        root.style.setProperty('--accent-primary', '#4d4d4d');
-        root.style.setProperty('--accent-secondary', '#1a1a1a');
-        root.style.setProperty('--accent-tertiary', '#262626');
-        root.style.setProperty('--accent-hover', '#333333');
+        this._setThemeVariables(root, '#4d4d4d', '#1a1a1a', '#262626', '#333333');
         break;
       default: // Purple (default)
-        root.style.setProperty('--accent-primary', '#8a54fd');
-        root.style.setProperty('--accent-secondary', '#6a3dd8');
-        root.style.setProperty('--accent-tertiary', '#4728a0');
-        root.style.setProperty('--accent-hover', '#9d73ff');
+        this._setThemeVariables(root, '#8a54fd', '#6a3dd8', '#4728a0', '#9d73ff');
         break;
     }
-    
-    // Update gradient variables as well
-    const primary = getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim();
-    const tertiary = getComputedStyle(document.documentElement).getPropertyValue('--accent-tertiary').trim();
-    const hover = getComputedStyle(document.documentElement).getPropertyValue('--accent-hover').trim();
-    const secondary = getComputedStyle(document.documentElement).getPropertyValue('--accent-secondary').trim();
-    
-    root.style.setProperty('--gradient-accent', `linear-gradient(135deg, ${primary}, ${tertiary})`);
-    root.style.setProperty('--gradient-accent-hover', `linear-gradient(135deg, ${hover}, ${secondary})`);
   }
-  
-  
-  // Apply timestamp visibility
-  function applyTimestampVisibility(show) {
+
+  /**
+   * Set theme variables safely
+   * @private
+   * @param {Element} root - Root element
+   * @param {string} primary - Primary color
+   * @param {string} secondary - Secondary color
+   * @param {string} tertiary - Tertiary color
+   * @param {string} hover - Hover color
+   */
+  _setThemeVariables(root, primary, secondary, tertiary, hover) {
+    // Validate hex colors to prevent CSS injection
+    const hexColorPattern = /^#([0-9A-F]{3}){1,2}$/i;
+    
+    if (!hexColorPattern.test(primary) || 
+        !hexColorPattern.test(secondary) || 
+        !hexColorPattern.test(tertiary) || 
+        !hexColorPattern.test(hover)) {
+      console.error('Invalid color values detected');
+      return;
+    }
+    
+    root.style.setProperty('--accent-primary', primary);
+    root.style.setProperty('--accent-secondary', secondary);
+    root.style.setProperty('--accent-tertiary', tertiary);
+    root.style.setProperty('--accent-hover', hover);
+    
+    // Update gradient variables
+    root.style.setProperty(
+      '--gradient-accent', 
+      `linear-gradient(135deg, ${primary}, ${tertiary})`
+    );
+    root.style.setProperty(
+      '--gradient-accent-hover', 
+      `linear-gradient(135deg, ${hover}, ${secondary})`
+    );
+  }
+
+  /**
+   * Apply font size setting
+   * @private
+   * @param {string} size - Font size setting
+   */
+  _applyFontSize(size) {
+    // Safety check
+    if (!SETTINGS_SCHEMA.fontSize.allowed.includes(size)) {
+      size = SETTINGS_SCHEMA.fontSize.default;
+    }
+    
+    // Remove existing font size classes
+    document.documentElement.classList.remove('font-small', 'font-medium', 'font-large');
+    
+    // Add selected font size class if not default
+    if (size !== 'medium') {
+      document.documentElement.classList.add(`font-${size}`);
+    }
+    
+    // Set CSS variable based on font size
+    const root = document.documentElement;
+    switch (size) {
+      case 'small':
+        root.style.setProperty('--base-font-size', '0.9rem');
+        break;
+      case 'large':
+        root.style.setProperty('--base-font-size', '1.1rem');
+        break;
+      default: // medium
+        root.style.setProperty('--base-font-size', '1rem');
+        break;
+    }
+  }
+
+  /**
+   * Apply timestamp visibility setting
+   * @private
+   * @param {boolean} show - Whether to show timestamps
+   */
+  _applyTimestampVisibility(show) {
     const timestamps = document.querySelectorAll('.timestamp');
     timestamps.forEach(timestamp => {
       timestamp.style.display = show ? 'block' : 'none';
     });
   }
+}
+
+// Create singleton instance
+const settingsManager = new SettingsManager();
+
+// Initialize on document ready
+document.addEventListener('DOMContentLoaded', () => {
+  settingsManager.initialize();
   
-  // Modified showToast function to use the configurable duration
-  function showToast(message, type = 'info') {
-    const toastContainer = document.getElementById('toast-container');
-    
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.classList.add('toast', type);
-    
-    // Create icon based on toast type
-    const icon = document.createElement('i');
-    icon.style.marginRight = '8px';
-    
-    switch(type) {
-      case 'success':
-        icon.className = 'fas fa-check-circle';
-        icon.style.color = 'var(--success)';
-        break;
-      case 'error':
-        icon.className = 'fas fa-exclamation-circle';
-        icon.style.color = 'var(--danger)';
-        break;
-      default:
-        icon.className = 'fas fa-info-circle';
-        icon.style.color = 'var(--accent-primary)';
-    }
-    
-    // Create message text element
-    const messageText = document.createElement('span');
-    messageText.textContent = message;
-    
-    // Add elements to toast
-    toast.appendChild(icon);
-    toast.appendChild(messageText);
-    
-    // Add to container
-    toastContainer.appendChild(toast);
-    
-    // Use configurable duration or default to 3000ms
-    const duration = window.toastDuration || currentSettings.toastDuration || 3000;
-    
-    // Auto-remove after duration
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(20px)';
-      setTimeout(() => {
-        if (toast.parentNode === toastContainer) {
-          toastContainer.removeChild(toast);
-        }
-      }, 300);
-    }, duration);
+  // Bind form elements to settings manager
+  bindSettingsFormControls();
+});
+
+/**
+ * Bind settings form controls to the settings manager
+ */
+function bindSettingsFormControls() {
+  const themeSelect = document.getElementById('theme-select');
+  const accentColorSelect = document.getElementById('accent-color-select');
+  const notificationToggle = document.getElementById('notification-toggle');
+  const toastDurationSelect = document.getElementById('toast-duration-select');
+  const timestampToggle = document.getElementById('message-timestamp-toggle');
+  const fontSizeSelect = document.getElementById('font-size-select');
+  
+  if (!themeSelect || !accentColorSelect || !notificationToggle || 
+      !toastDurationSelect || !timestampToggle) {
+    console.error('Settings form elements not found');
+    return;
   }
   
-  // Initialize settings when the document is loaded
-  document.addEventListener('DOMContentLoaded', initializeSettings);
+  // Get current settings
+  const settings = settingsManager.getSettings();
   
-  // Export functions for use in other scripts
-  window.showToast = showToast;
-  window.applySettings = applySettings;
-  window.currentSettings = currentSettings;
+  // Update form to match current settings
+  themeSelect.value = settings.theme;
+  accentColorSelect.value = settings.accentColor;
+  notificationToggle.checked = settings.notifications;
+  toastDurationSelect.value = settings.toastDuration.toString();
+  timestampToggle.checked = settings.showTimestamps;
+  
+  if (fontSizeSelect) {
+    fontSizeSelect.value = settings.fontSize;
+  }
+  
+  // Add save button handler
+  const saveSettingsBtn = document.getElementById('save-settings-btn');
+  if (saveSettingsBtn) {
+    saveSettingsBtn.addEventListener('click', () => {
+      const newSettings = {
+        theme: themeSelect.value,
+        accentColor: accentColorSelect.value,
+        notifications: notificationToggle.checked,
+        toastDuration: parseInt(toastDurationSelect.value),
+        showTimestamps: timestampToggle.checked,
+      };
+      
+      if (fontSizeSelect) {
+        newSettings.fontSize = fontSizeSelect.value;
+      }
+      
+      const success = settingsManager.updateSettings(newSettings);
+      
+      if (success) {
+        showToast('Settings saved successfully', 'success');
+        toggleModal(document.getElementById('settings-modal'), false);
+      } else {
+        showToast('Failed to save settings', 'error');
+      }
+    });
+  }
+  
+  // Add reset button handler
+  const resetSettingsBtn = document.getElementById('reset-settings-btn');
+  if (resetSettingsBtn) {
+    resetSettingsBtn.addEventListener('click', () => {
+      settingsManager.resetSettings();
+      
+      // Update form to match reset settings
+      const resetSettings = settingsManager.getSettings();
+      themeSelect.value = resetSettings.theme;
+      accentColorSelect.value = resetSettings.accentColor;
+      notificationToggle.checked = resetSettings.notifications;
+      toastDurationSelect.value = resetSettings.toastDuration.toString();
+      timestampToggle.checked = resetSettings.showTimestamps;
+      
+      if (fontSizeSelect) {
+        fontSizeSelect.value = resetSettings.fontSize;
+      }
+      
+      showToast('Settings reset to defaults', 'info');
+    });
+  }
+}
+
+/**
+ * Show a toast notification
+ * @param {string} message - Toast message
+ * @param {string} type - Toast type (success, error, info)
+ */
+function showToast(message, type = 'info') {
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+  
+  // Sanitize message to prevent XSS
+  const sanitizedMessage = document.createTextNode(message);
+  
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.classList.add('toast', type);
+  
+  // Create icon based on toast type
+  const icon = document.createElement('i');
+  icon.style.marginRight = '8px';
+  
+  switch(type) {
+    case 'success':
+      icon.className = 'fas fa-check-circle';
+      icon.style.color = 'var(--success)';
+      break;
+    case 'error':
+      icon.className = 'fas fa-exclamation-circle';
+      icon.style.color = 'var(--danger)';
+      break;
+    default:
+      icon.className = 'fas fa-info-circle';
+      icon.style.color = 'var(--accent-primary)';
+  }
+  
+  // Create message text element
+  const messageSpan = document.createElement('span');
+  messageSpan.appendChild(sanitizedMessage);
+  
+  // Add elements to toast
+  toast.appendChild(icon);
+  toast.appendChild(messageSpan);
+  
+  // Add to container
+  toastContainer.appendChild(toast);
+  
+  // Use configurable duration or default to 3000ms
+  const duration = window.toastDuration || 3000;
+  
+  // Auto-remove after duration
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+      if (toast.parentNode === toastContainer) {
+        toastContainer.removeChild(toast);
+      }
+    }, 300);
+  }, duration);
+}
+
+// Export for use in other scripts
+window.settingsManager = settingsManager;
+window.showToast = showToast;
