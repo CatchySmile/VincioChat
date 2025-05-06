@@ -494,7 +494,7 @@ input[type="text"]:focus {
 
 /* Self Message Styling */
 .self-message .message {
-  background-color: var(--accent-tertiary);
+  background-color: var(rgba(255, 255, 255, 0.5));
 }
 
 /* User Avatar Styling */
