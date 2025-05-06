@@ -378,9 +378,6 @@ input[type="text"]:focus {
 /* Add padding at the bottom to ensure last message is visible above input form */
 #messages {
   padding-bottom: 10px;
-}
-
-#messages {
   list-style: none;
 }
 
@@ -500,7 +497,9 @@ input[type="text"]:focus {
   transform: scale(0.95);
 }
 
-/* Modal */
+/* Add this to dark.css file or create a new modal.css file */
+
+/* ===== CRITICAL MODAL FIXES ===== */
 .modal {
   display: none;
   position: fixed;
@@ -509,7 +508,7 @@ input[type="text"]:focus {
   width: 100%;
   height: 100%;
   background-color: var(--modal-overlay);
-  z-index: 1000;
+  z-index: 9999; /* Much higher z-index */
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(4px);
@@ -520,10 +519,82 @@ input[type="text"]:focus {
   border-radius: var(--radius-lg);
   width: 90%;
   max-width: 450px;
+  max-height: 90vh; /* Prevent extra large modals */
   box-shadow: 0 12px 28px var(--shadow-color);
   animation: modalFadeIn 0.3s ease-out;
   border: 1px solid var(--border-color);
   overflow: hidden;
+  z-index: 10000; /* Even higher z-index */
+  position: relative; /* Position relative for z-index to work */
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+  position: relative; /* Allow stacking in modal */
+}
+
+.modal-body {
+  padding: var(--space-lg);
+  overflow-y: auto;
+  flex: 1; /* Allow the body to grow */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+.modal-footer {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: var(--bg-tertiary);
+  position: relative; /* Allow stacking in modal */
+}
+
+@keyframes modalFadeIn {
+  from {
+      opacity: 0;
+      transform: scale(0.95);
+  }
+  to {
+      opacity: 1;
+      transform: scale(1);
+  }
+}
+
+/* Fix for the close modal button */
+.close-modal {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color var(--transition-fast) ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  z-index: 1; /* Ensure button is clickable */
+}
+
+.close-modal:hover {
+  color: var(--accent-primary);
+}
+
+/* Toast container fixes */
+#toast-container {
+  position: fixed;
+  top: var(--space-md);
+  right: var(--space-md);
+  z-index: 10001; /* Higher than modal */
+  max-width: 320px;
 }
 
 @keyframes modalFadeIn {
@@ -629,15 +700,6 @@ input[type="text"]:focus {
   content: '👑';
   margin-left: auto;
   font-size: 1rem;
-}
-
-/* Toast Notifications */
-#toast-container {
-  position: fixed;
-  top: var(--space-md);
-  right: var(--space-md);
-  z-index: 1001;
-  max-width: 320px;
 }
 
 .toast {
@@ -841,96 +903,25 @@ input[type="text"]:focus {
   border-radius: var(--radius-full);
 }
 
-/* Extended styling for the legal page */
-main {
-  padding: 20px;
-  max-width: 800px;
-  margin: 2rem auto;
-  background-color: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px var(--shadow-color);
-  border: 1px solid var(--border-color);
-}
-
-main h2 {
-  color: var(--accent-primary);
-  margin-top: var(--space-xl);
-}
-
-main h3 {
+/* Secondary Button */
+.secondary-btn {
+  background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  margin-top: var(--space-lg);
-}
-
-main p {
-  margin-bottom: var(--space-md);
-}
-
-main ul {
-  margin-bottom: var(--space-md);
-  padding-left: var(--space-xl);
-}
-
-main li {
-  margin-bottom: var(--space-xs);
-}
-
-footer {
-  text-align: center;
-  padding: var(--space-md);
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
-
-a {
-  color: var(--accent-primary);
-  text-decoration: none;
-  transition: color var(--transition-normal) ease;
-}
-
-a:hover {
-  color: var(--accent-hover);
-  text-decoration: underline;
-}
-
-/* Error page styling */
-.error-container {
-  text-align: center;
-  background-color: var(--bg-secondary);
-  padding: var(--space-xl);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px var(--shadow-color);
-  border: 1px solid var(--border-color);
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.error-container h1 {
-  font-size: 3rem;
-  color: var(--accent-primary);
-}
-
-.error-container p {
-  font-size: 1.2rem;
-  margin-bottom: var(--space-md);
-}
-
-.error-container button {
-  margin-top: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--gradient-accent);
-  color: white;
-  border: none;
+  padding: 0.75rem 1.5rem;
   border-radius: var(--radius-md);
-  font-size: 1rem;
-  cursor: pointer;
   transition: all var(--transition-normal) ease;
+  border: 1px solid var(--border-color);
 }
 
-.error-container button:hover {
+.secondary-btn:hover {
+  background-color: var(--input-bg);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 84, 253, 0.25);
 }
+
+.secondary-btn:active {
+  transform: translateY(1px);
+}
+
 /* Add this to the CSS file for the cooldown effect */
 #send-btn.cooldown {
   opacity: 0.7;
@@ -954,4 +945,79 @@ a:hover {
     transform: scale(0.95);
     opacity: 0.7;
   }
+}
+
+/* Settings-specific styling fixes */
+#settings-modal .settings-section {
+  margin-bottom: 1.5rem;
+}
+
+#settings-modal .settings-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+#settings-modal select {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  appearance: none;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+/* Toggle Switch Styling */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  transition: .3s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 2px;
+  background-color: var(--text-secondary);
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-tertiary);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(21px);
+  background-color: white;
 }
