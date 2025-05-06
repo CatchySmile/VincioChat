@@ -1,127 +1,327 @@
-/* Accent Colors */
+/* themes.css - Complete refactor */
 
-/* Base font size variable */
+/* Base theme variables - these will be overridden by specific themes */
 :root {
-    --base-font-size: 1rem;
-  }
+  /* Base font size variable */
+  --base-font-size: 1rem;
   
-  /* Font size modifiers */
-  .font-small {
-    --base-font-size: 0.9rem;
-  }
+  /* Main Color Palette - Dark Theme (Default) */
+  --bg-primary: #0f0f13;
+  --bg-secondary: #1a1a22;
+  --bg-tertiary: #24242e;
+  --text-primary: #f8f8f8;
+  --text-secondary: #c2c2c2;
   
-  .font-medium {
-    --base-font-size: 1rem;
-  }
+  /* Accent Colors - Purple (Default) */
+  --accent-primary: #8a54fd;
+  --accent-secondary: #6a3dd8;
+  --accent-tertiary: #4728a0;
+  --accent-hover: #9d73ff;
   
-  .font-large {
-    --base-font-size: 1.1rem;
-  }
+  /* Notification Colors */
+  --danger: #ff3c5c;
+  --danger-hover: #e02e4e;
+  --success: #24d17f;
+  --warning: #ffac30;
   
-  /* Apply font size to relevant elements */
-  body {
-    font-size: var(--base-font-size);
-  }
+  /* UI Elements */
+  --input-bg: #2a2a36;
+  --border-color: #3a3a48;
+  --shadow-color: rgba(0, 0, 0, 0.35);
+  --shadow-light: rgba(0, 0, 0, 0.2);
+  --modal-overlay: rgba(10, 10, 15, 0.85);
   
-  .message .text {
-    font-size: var(--base-font-size);
-  }
-  
-  .message .username {
-    font-size: calc(var(--base-font-size) * 0.9);
-  }
-  
-  .message .timestamp {
-    font-size: calc(var(--base-font-size) * 0.7);
-  }
-  
-  /* Default accent colors (purple) */
-  :root {
-    --accent-primary: #8a54fd;
-    --accent-secondary: #6a3dd8;
-    --accent-tertiary: #4728a0;
-    --accent-hover: #9d73ff;
-    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
-  }
-  
-  /* Blue accent */
-  :root.accent-blue {
-    --accent-primary: #4285f4;
-    --accent-secondary: #3367d6;
-    --accent-tertiary: #2a56c6;
-    --accent-hover: #5a95f5;
-    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
-  }
+  /* Gradients */
+  --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+  --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
+}
 
-  /* Red accent */
-  :root.accent-red {
-    --accent-primary: #ff3333;
-    --accent-secondary: #e60000;
-    --accent-tertiary: #800000;
-    --accent-hover: #660000;
-    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
-  }
-  
-  /* Black accent */
-  :root.accent-black {
-    --accent-primary: #4d4d4d;
-    --accent-secondary: #1a1a1a;
-    --accent-tertiary: #262626;
-    --accent-hover: #333333;
-    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
-  }
+/* Apply font sizes */
+body {
+  font-size: var(--base-font-size);
+}
 
-  /* Green accent */
-  :root.accent-green {
-    --accent-primary: #34a853;
-    --accent-secondary: #2e9549;
-    --accent-tertiary: #1e8e3e;
-    --accent-hover: #46bf65;
-    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
-  }
+.message .text {
+  font-size: var(--base-font-size);
+}
+
+.message .username {
+  font-size: calc(var(--base-font-size) * 0.9);
+}
+
+.message .timestamp {
+  font-size: calc(var(--base-font-size) * 0.7);
+}
+
+/* Font size classes */
+:root.font-small {
+  --base-font-size: 0.9rem;
+}
+
+:root.font-medium {
+  --base-font-size: 1rem;
+}
+
+:root.font-large {
+  --base-font-size: 1.1rem;
+}
+
+/* THEME: Light */
+:root.light-theme {
+  /* Main colors */
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f0f5;
+  --text-primary: #2c2c2e;
+  --text-secondary: #636366;
   
-  /* Pink accent */
-  :root.accent-pink {
-    --accent-primary: #e84e8a;
-    --accent-secondary: #d84177;
-    --accent-tertiary: #c13b6b;
-    --accent-hover: #ec699b;
-    --gradient-accent: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-    --gradient-accent-hover: linear-gradient(135deg, var(--accent-hover), var(--accent-secondary));
-  }
+  /* UI elements */
+  --input-bg: #ffffff;
+  --border-color: #d1d1d6;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-light: rgba(0, 0, 0, 0.05);
+  --modal-overlay: rgba(245, 245, 247, 0.85);
+}
+
+/* Light theme message styles */
+:root.light-theme .message {
+  background-color: #f0f0f5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:root.light-theme .system-message {
+  background-color: rgba(138, 84, 253, 0.05);
+}
+
+:root.light-theme .modal-header,
+:root.light-theme .modal-footer {
+  background-color: #f0f0f5;
+}
+
+:root.light-theme #user-list li {
+  background-color: #f0f0f5;
+}
+
+:root.light-theme #user-list li.owner {
+  border-left: 3px solid var(--accent-primary);
+  background-color: var(--bg-secondary);
+  font-weight: 500;
+}
+
+:root.light-theme *::-webkit-scrollbar-thumb {
+  background-color: #d0d0d5;
+}
+
+/* THEME: Material */
+:root.material-theme {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #262626;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
   
-  /* Additional styles for the accent color selector */
-  #accent-color-select {
-    background-position: right 8px center;
-    padding-right: 30px;
-  }
+  --input-bg: #2c2c2c;
+  --border-color: #373737;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-light: rgba(0, 0, 0, 0.15);
+  --modal-overlay: rgba(18, 18, 18, 0.9);
+}
+
+:root.material-theme body {
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 15% 95%, rgba(255, 255, 255, 0.03) 0%, transparent 20%),
+    radial-gradient(circle at 85% 5%, rgba(255, 255, 255, 0.03) 0%, transparent 25%);
+}
+
+:root.material-theme .message {
+  background-color: #292929;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root.material-theme .system-message {
+  background-color: rgba(var(--accent-primary-rgb, 138, 84, 253), 0.08);
+}
+
+:root.material-theme .modal-header,
+:root.material-theme .modal-footer {
+  background-color: #272727;
+}
+
+:root.material-theme #user-list li {
+  background-color: #2a2a2a;
+}
+
+/* THEME: Mint Breeze */
+:root.mint-theme {
+  --bg-primary: #e6f2ef;
+  --bg-secondary: #f2fdfb;
+  --bg-tertiary: #dff0eb;
+  --text-primary: #2b4c48;
+  --text-secondary: #587672;
   
-  /* Color indicators in the dropdown */
-  #accent-color-select option[value="purple"]::before {
-    content: "🟣 ";
-  }
+  --input-bg: #f0faf7;
+  --border-color: #cfe6e1;
+  --shadow-color: rgba(0, 50, 40, 0.08);
+  --shadow-light: rgba(0, 50, 40, 0.04);
+  --modal-overlay: rgba(230, 245, 240, 0.85);
+}
+
+:root.mint-theme body {
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 15% 95%, rgba(0, 180, 120, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 85% 5%, rgba(0, 180, 120, 0.06) 0%, transparent 45%);
+}
+
+:root.mint-theme .message {
+  background-color: #dff0eb;
+  box-shadow: 0 1px 3px rgba(0, 50, 40, 0.05);
+}
+
+:root.mint-theme .system-message {
+  background-color: rgba(var(--accent-primary-rgb, 138, 84, 253), 0.05);
+}
+
+/* THEME: Midnight Red */
+:root.blackred-theme {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
   
-  #accent-color-select option[value="blue"]::before {
-    content: "🔵 ";
-  }
+  --danger: #ff3c5c;
+  --danger-hover: #e02e4e;
+  --success: #02a82c;
+  --warning: #ffbd30;
   
-  #accent-color-select option[value="red"]::before {
-    content: "🔴 ";
-  }
-  
-  #accent-color-select option[value="green"]::before {
-    content: "🟢 ";
-  }
-  
-  #accent-color-select option[value="pink"]::before {
-    content: "🔴 ";
-  }
-  
-  #accent-color-select option[value="black"]::before {
-    content: "⚫ ";
-  }
+  --input-bg: #1a1a1a;
+  --border-color: #333333;
+  --shadow-color: rgba(255, 60, 92, 0.2);
+  --shadow-light: rgba(255, 60, 92, 0.1);
+  --modal-overlay: rgba(18, 18, 18, 0.85);
+}
+
+:root.blackred-theme body {
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 15% 95%, rgba(255, 0, 0, 0.06) 0%, transparent 20%),
+    radial-gradient(circle at 85% 5%, rgba(255, 15, 15, 0.06) 0%, transparent 25%);
+}
+
+:root.blackred-theme .message {
+  background-color: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(255, 60, 92, 0.05);
+}
+
+:root.blackred-theme .system-message {
+  background-color: rgba(255, 60, 92, 0.08);
+}
+
+:root.blackred-theme .modal-header,
+:root.blackred-theme .modal-footer {
+  background-color: #2a2a2a;
+}
+
+:root.blackred-theme #user-list li {
+  background-color: #2a2a2a;
+}
+
+:root.blackred-theme *::-webkit-scrollbar-thumb {
+  background-color: #444;
+}
+
+/* THEME: Matrix */
+:root.matrix-theme {
+  --bg-primary: #000000;
+  --bg-secondary: #0d0d0d;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #00ff00;
+  --text-secondary: #00cc00;
+
+  --input-bg: #0d0d0d;
+  --border-color: #003300;
+  --shadow-color: rgba(0, 255, 0, 0.2);
+  --shadow-light: rgba(0, 255, 0, 0.1);
+  --modal-overlay: rgba(0, 0, 0, 0.85);
+}
+
+:root.matrix-theme body {
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 15% 95%, rgba(0, 255, 42, 0.06) 0%, transparent 20%),
+    radial-gradient(circle at 85% 5%, rgba(9, 255, 0, 0.06) 0%, transparent 25%);
+}
+
+:root.matrix-theme .message {
+  background-color: #1a1a1a;
+  box-shadow: 0 1px 3px rgba(0, 255, 0, 0.05);
+}
+
+:root.matrix-theme .system-message {
+  background-color: rgba(0, 255, 0, 0.07);
+}
+
+:root.matrix-theme .modal-header,
+:root.matrix-theme .modal-footer {
+  background-color: #1a1a1a;
+}
+
+:root.matrix-theme #user-list li {
+  background-color: #1a1a1a;
+}
+
+:root.matrix-theme *::-webkit-scrollbar-thumb {
+  background-color: #00cc00;
+}
+
+/* Accent Color Variables */
+:root {
+  /* Default accent is purple, these are set via CSS variables in the settings manager */
+  --accent-primary-rgb: 138, 84, 253;
+  --accent-secondary-rgb: 106, 61, 216;
+  --accent-tertiary-rgb: 71, 40, 160;
+  --accent-hover-rgb: 157, 115, 255;
+}
+
+/* Helper classes for color themes */
+.color-accent-primary {
+  color: var(--accent-primary);
+}
+
+.bg-accent-primary {
+  background-color: var(--accent-primary);
+}
+
+/* Accent text colors for better contrast */
+:root.light-theme .color-accent-primary {
+  color: var(--accent-primary);
+}
+
+:root.matrix-theme .text-regular {
+  color: #ffffff;
+}
+
+/* Ensure proper contrast in all themes */
+.toast.success, 
+.toast.error, 
+.toast.info {
+  color: var(--text-primary);
+}
+
+/* Enhanced accessibility for focus states */
+button:focus,
+input:focus,
+select:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast focus rings for keyboard navigation */
+.keyboard-nav button:focus,
+.keyboard-nav input:focus,
+.keyboard-nav select:focus {
+  outline: 3px solid var(--accent-primary);
+  outline-offset: 3px;
+}
