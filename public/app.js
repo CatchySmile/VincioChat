@@ -325,7 +325,7 @@ function handleMessageSubmit(event) {
   }
   
   // Check for excessive whitespace
-  if (messageText.split(/\s+/).length > 30) {
+  if (messageText.split(/\s+/).length > 40) {
     messageInput.value = "";
     showToast("Message contains excessive whitespace", "error");
     return;
@@ -568,6 +568,7 @@ function addMessage(message) {
   
   // Generate a consistent color based on username
   const hue = getHashCode(message.username) % 360;
+  
   if (!isCurrentUser) {
     avatar.style.backgroundColor = `hsl(${hue}, 70%, 40%)`;
   }
