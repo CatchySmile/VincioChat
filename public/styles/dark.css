@@ -530,6 +530,16 @@ input[type="text"]:focus {
   overflow: hidden; /* Ensure content doesn't spill out */
   margin: 0; /* Reset any margins */
   padding: 0; /* Reset any padding */
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px var(--shadow-light);
+  border: 2px solid var(--border-color);
 }
 .self-message .avatar {
   order: 1; /* Move avatar to the right for self messages */

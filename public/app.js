@@ -568,7 +568,10 @@ function addMessage(message) {
   
   // Generate a consistent color based on username
   const hue = getHashCode(message.username) % 360;
-  avatar.style.backgroundColor = `hsl(${hue}, 70%, 40%)`;
+  
+  if (!isCurrentUser) {
+    avatar.style.backgroundColor = `hsl(${hue}, 70%, 40%)`;
+  }
   
   // Create message content
   const messageElement = document.createElement('div');
