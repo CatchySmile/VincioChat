@@ -92,7 +92,7 @@ Project Root/
 - **Session Management**
   - Secure session tokens with encryption
   - CSRF token implementation
-  - Activity tracking and timeout management
+  - Time tracking and management
 
 - **Server Hardening**
   - Content Security Policy implementation
