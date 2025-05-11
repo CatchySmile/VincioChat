@@ -41,10 +41,10 @@ Scratchy Chat is a secure, ephemeral web-based chat application that allows user
   - Helmet for security headers
 
 - **Security:**
-  - DOMPurify for HTML sanitization
-  - Crypto module for secure random generation
-  - UUID for unique identifier generation
+  - DOMPurify for sanitization
+  - Cryptography
   - JSDOM for DOM manipulation in Node.js
+  - More stuff down below.
 
 ## Project Structure
 
