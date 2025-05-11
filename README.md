@@ -51,7 +51,7 @@ Scratchy Chat is a secure, ephemeral web-based chat application that allows user
 ```
 Project Root/
 ├── Public/
-│   ├── Styles/
+│   ├── Public/
 │   │   ├── dark.css             # Global CSS styling
 │   │   ├── legal.css            # Legal Page CSS styling
 │   │   ├── settings.css         # Settings CSS styling
@@ -92,7 +92,8 @@ Project Root/
 - **Session Management**
   - Secure session tokens with encryption
   - CSRF token implementation
-  - Activity tracking and timeout management
+  - Time tracking and management
+  - Smart rate limiting
 
 - **Server Hardening**
   - Content Security Policy implementation
@@ -134,10 +135,10 @@ To modify the application:
 
 ## Privacy & Terms
 
-- No messages, user data, or room information are stored permanently
+- No messages, user data, or room information are stored
 - All data exists only in memory during active sessions
 - When a room is deleted, all associated information is immediately removed
-- No logging of personally identifiable information
+- No logging of personally identifiable information or similar.
 
 ## License
 
