@@ -7,7 +7,7 @@ Scratchy Chat is a secure, ephemeral web-based chat application that allows user
   - Create or join rooms with unique 12-digit alphanumeric codes
   - Automatic room ownership transfer when owners leave
   - Room cleanup after periods of inactivity
-  - Limit on maximum users per room to prevent DoS attacks
+  - Rate limiting on everything *practical*.
 
 - **Real-time Communication**
   - WebSocket-based messaging via Socket.IO with polling fallback
@@ -16,10 +16,10 @@ Scratchy Chat is a secure, ephemeral web-based chat application that allows user
   - User join/leave notifications and status updates
 
 - **Privacy-Focused Design**
-  - No permanent data storage—all information exists only in memory
-  - No logs of personal data, messages, or room information
+  - No permanent data storage, all information exists only in memory
+  - No logs of personal data, messages, or room information.
   - Messages and room data disappear when rooms are deleted
-  - No cookies or user tracking
+  - No cookies or user tracking in any form.
 
 - **Responsive UI**
   - Modern dark theme with customizable CSS variables
