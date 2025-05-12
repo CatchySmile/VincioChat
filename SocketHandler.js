@@ -129,7 +129,8 @@ class SocketHandler {
 
     // Error handling
     socket.on('error', (error) => {
-      this.logger.error(`Socket error for ${socket.id}: ${error.message}`);
+        this.logger.error(`Socket error for ${socket.id}: 
+      `);
     });
   }
   
@@ -158,7 +159,7 @@ class SocketHandler {
       const room = this.roomManager.createRoom(socket.id, username, clientIp);
       
       // Generate session token for authentication
-      const sessionToken = SecurityUtils.generateSessionToken(socket.id, room.code);
+      const sessionToken = SecurityUtils.generateSessionToken(socket.id, room.code); //
       
       // Generate CSRF token for form submissions
       const csrfToken = SecurityUtils.generateCSRFToken(socket.id);
@@ -190,7 +191,7 @@ class SocketHandler {
       
       this.logger.info(`Room created: ${room.code} by ${username} (${socket.id})`);
     } catch (error) {
-      this.logger.error(`Error creating room: ${error.message}`);
+      this.logger.error(`Error creating room `);
       socket.emit('error', 'Failed to create room');
     }
   }
@@ -276,7 +277,7 @@ class SocketHandler {
       
       this.logger.info(`User ${username} (${socket.id}) joined room: ${room.code}`);
     } catch (error) {
-      this.logger.error(`Error joining room: ${error.message}`);
+      this.logger.error(`Error joining room `);
       socket.emit('error', 'Failed to join room');
     }
   }
@@ -342,7 +343,7 @@ class SocketHandler {
       
       this.logger.debug(`Message in room ${roomCode} from ${userData.username}: ${message.substring(0, 20)}${message.length > 20 ? '...' : ''}`);
     } catch (error) {
-      this.logger.error(`Error sending message: ${error.message}`);
+      this.logger.error(`Error sending message `);
       socket.emit('error', 'Failed to send message');
     }
   }
@@ -410,7 +411,7 @@ class SocketHandler {
       
       this.logger.info(`Room ${roomCode} deleted by ${socket.id}`);
     } catch (error) {
-      this.logger.error(`Error deleting room: ${error.message}`);
+      this.logger.error(`Error deleting room `);
       socket.emit('error', 'Failed to delete room');
     }
   }
@@ -505,7 +506,7 @@ class SocketHandler {
       
       this.logger.info(`User ${kickedUsername} (${userToKickId}) was kicked from room ${roomCode} by ${socket.id}`);
     } catch (error) {
-      this.logger.error(`Error kicking user: ${error.message}`);
+      this.logger.error(`Error kicking user `);
       socket.emit('error', 'Failed to kick user');
     }
   }
@@ -563,7 +564,7 @@ class SocketHandler {
       
       this.logger.info(`User ${username} (${socket.id}) left room: ${roomCode}`);
     } catch (error) {
-      this.logger.error(`Error leaving room: ${error.message}`);
+      this.logger.error(`Error leaving room `);
       socket.emit('error', 'Failed to leave room');
     }
   }
@@ -605,7 +606,7 @@ class SocketHandler {
       
       this.logger.info(`Client disconnected: ${socket.id}`);
     } catch (error) {
-      this.logger.error(`Error handling disconnect: ${error.message}`);
+      this.logger.error(`Error handling disconnect `);
     }
   }
   
@@ -626,7 +627,7 @@ class SocketHandler {
         Buffer.from(token, 'utf8')
       );
     } catch (error) {
-      this.logger.error(`CSRF validation error: ${error.message}`);
+      this.logger.error(`CSRF validation error `);
       return false;
     }
   }
