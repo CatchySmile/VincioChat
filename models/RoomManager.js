@@ -24,7 +24,7 @@ class RoomManager {
       maxRooms: options.maxRooms || 500, // Global room limit
       roomInactivityTimeout: options.roomInactivityTimeout || 3600000, // 1 hour
       cleanupInterval: options.cleanupInterval || 900000, // 15 minutes
-      roomCodeLength: options.roomCodeLength || 12
+      roomCodeLength: options.roomCodeLength || 24
     };
     
     // Track room creation by IP hash for rate limiting
