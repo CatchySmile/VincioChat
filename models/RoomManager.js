@@ -1,10 +1,6 @@
 /**
- * Manages all chat rooms with enhanced security, privacy, and resource controls
- * Addresses:
- * - Memory leaks in room counter timeouts
- * - Improved error handling
- * - Resource monitoring
- * - Performance optimizations
+ * Manages all chat rooms with enhanced security, privacy, resource controls
+ * and memory management optimizations
  */
 const Room = require('./Room');
 const Message = require('./Message');
@@ -52,12 +48,13 @@ class RoomManager {
             roomCount: 0,
             userCount: 0,
             messageCount: 0,
-            memoryUsage: 0
+            memoryUsage: 0,
+            cleanupCount: 0,
+            lastCleanup: null
         };
 
         // Initialize periodic cleanup and monitoring
         this.initializeCleanupSchedule();
-        this.initializeMemoryMonitoring();
     }
 
     /**
@@ -67,6 +64,7 @@ class RoomManager {
      * @param {string} ip - IP address of the creator (for rate limiting)
      * @param {Object} options - Room configuration options
      * @returns {Room|null} The newly created room or null if limit reached
+     * @throws {Error} If room creation fails for a critical reason
      */
     createRoom(ownerId, ownerName, ip, options = {}) {
         try {
@@ -121,11 +119,12 @@ class RoomManager {
             // Emit event for monitoring
             this.emit('roomCreated', { roomCode, ownerHash: this.hashIdentifier(ownerId) });
 
-            // this.logger.info(`Room created: ${roomCode} by ${owner.username} (${this.hashIdentifier(ownerId)})`);
+
+            this.logger.info(`Room created: ${roomCode} by ${owner.username} (${this.hashIdentifier(ownerId)})`);
             return room;
         } catch (error) {
             this.logger.error(`Failed to create room: ${error.message}`);
-            return null;
+            throw new Error(`Room creation failed: ${error.message}`);
         }
     }
 
@@ -136,13 +135,7 @@ class RoomManager {
      * @private
      */
     hashIdentifier(identifier) {
-        const hash = crypto.createHash('sha256');
-        // Use a constant salt to prevent correlation across app restarts
-        const salt = process.env.HASH_SALT || 'vincio-chat-privacy-salt';
-        hash.update(identifier + salt);
-        // Return only first 8 characters - enough for differentiation
-        // but not enough to reconstruct the original value
-        return hash.digest('hex').substring(0, 8);
+        return SecurityUtils.hashIdentifier(identifier);
     }
 
     /**
@@ -194,9 +187,7 @@ class RoomManager {
      * @private
      */
     generateSecureRoomCode() {
-        return crypto.randomBytes(this.config.roomCodeLength / 2)
-            .toString('hex')
-            .toUpperCase();
+        return SecurityUtils.generateSecureRoomCode();
     }
 
     /**
@@ -206,6 +197,7 @@ class RoomManager {
      * @param {string} username - Username of the joining user
      * @param {string} ip - IP address of the user
      * @returns {Room|null} Room data or null if room doesn't exist or is full
+     * @throws {Error} If joining fails for a critical reason
      */
     joinRoom(roomCode, userId, username, ip) {
         try {
@@ -246,7 +238,7 @@ class RoomManager {
             return room;
         } catch (error) {
             this.logger.error(`Failed to join room: ${error.message}`);
-            return null;
+            throw new Error(`Failed to join room: ${error.message}`);
         }
     }
 
@@ -297,9 +289,15 @@ class RoomManager {
                     const newOwner = room.owner;
                     if (newOwner) {
                         newOwnerId = newOwner.id;
+
+                        // Add system message about new owner
+                        this.addSystemMessage(roomCode, `${newOwner.username} is now the room owner.`);
+
                         this.logger.info(`New owner assigned for room ${roomCode}: ${newOwner.username} (${this.hashIdentifier(newOwnerId)})`);
                     }
                 }
+                // Add system message about user leaving
+                this.addSystemMessage(roomCode, `${userData.username} has left the room.`);
 
                 this.logger.info(`User ${userData.username} (${this.hashIdentifier(userId)}) left room: ${roomCode}`);
                 return {
@@ -324,6 +322,7 @@ class RoomManager {
      * @param {string} targetUsername - Username of user to kick
      * @param {boolean} ban - Whether to ban the user from rejoining
      * @returns {Object|null} Kicked user info or null if failed
+     * @throws {Error} If kicking fails for a critical reason
      */
     kickUser(roomCode, requesterId, targetUsername, ban = false) {
         try {
@@ -356,6 +355,9 @@ class RoomManager {
             // Update memory stats
             this.memoryStats.userCount = Math.max(0, this.memoryStats.userCount - 1);
 
+            // Add system message
+            this.addSystemMessage(roomCode, `${targetUsername} was kicked from the room.`);
+
             // Emit event for monitoring
             this.emit('userKicked', {
                 roomCode,
@@ -372,7 +374,7 @@ class RoomManager {
             };
         } catch (error) {
             this.logger.error(`Error kicking user ${targetUsername}: ${error.message}`);
-            return null;
+            throw new Error(`Failed to kick user: ${error.message}`);
         }
     }
 
@@ -405,6 +407,7 @@ class RoomManager {
      * @param {string} userId - Socket ID of the sender
      * @param {string} text - Message content
      * @returns {Message|null} The created message or null if room/user doesn't exist
+     * @throws {Error} If message addition fails for a critical reason
      */
     addMessage(roomCode, userId, text) {
         try {
@@ -446,7 +449,10 @@ class RoomManager {
             return null;
         }
     }
-
+    /**
+ * Improved system message handler for RoomManager.js
+ * This function should replace the existing addSystemMessage in RoomManager.js
+ */
     /**
      * Adds a system message to a room
      * @param {string} roomCode - Code of the room
@@ -464,13 +470,19 @@ class RoomManager {
             // Generate a secure unique ID for the message
             const messageId = 'system-' + crypto.randomUUID();
 
+            // Create the message with System as the username
             const message = new Message(messageId, 'System', sanitizedText);
+
+            // Set the isSystem flag
+            message.isSystem = true;
 
             // Add to room (bypass rate limiting for system messages)
             room.addMessage(message, true);
 
             // Update memory stats
             this.memoryStats.messageCount += 1;
+
+            this.logger.debug(`System message added to room ${roomCode}: ${sanitizedText}`);
 
             return message;
         } catch (error) {
@@ -480,9 +492,37 @@ class RoomManager {
     }
 
     /**
+     * Notifies users in a room before deleting (for graceful shutdown/cleanup)
+     * @param {string} roomCode - Room code
+     * @param {string} reason - Reason for deletion
+     */
+    notifyRoomDeletion(roomCode, reason) {
+        try {
+            const room = this.getRoom(roomCode);
+            if (!room) return false;
+
+            // Add system message
+            this.addSystemMessage(roomCode, `NOTICE: ${reason || 'This room will be deleted soon.'}`);
+
+            // Emit event
+            this.emit('roomDeletionNotice', {
+                roomCode,
+                reason,
+                timestamp: new Date().toISOString()
+            });
+
+            return true;
+        } catch (error) {
+            this.logger.error(`Failed to notify room deletion: ${error.message}`);
+            return false;
+        }
+    }
+
+    /**
      * Deletes a room and all associated data
      * @param {string} roomCode - Code of the room to delete
      * @returns {boolean} True if room was deleted, false if it didn't exist
+     * @throws {Error} If deletion fails for a critical reason
      */
     deleteRoom(roomCode) {
         try {
@@ -514,7 +554,7 @@ class RoomManager {
             return true;
         } catch (error) {
             this.logger.error(`Error deleting room ${roomCode}: ${error.message}`);
-            return false;
+            throw new Error(`Failed to delete room: ${error.message}`);
         }
     }
 
@@ -542,6 +582,14 @@ class RoomManager {
         // Case-insensitive room code lookup
         const normalizedCode = roomCode.toUpperCase();
         return this.rooms.get(normalizedCode) || null;
+    }
+
+    /**
+     * Gets all rooms (for internal use only - memory monitoring/admin functions)
+     * @returns {Map<string, Room>} Map of all rooms
+     */
+    getAllRooms() {
+        return this.rooms;
     }
 
     /**
@@ -583,7 +631,8 @@ class RoomManager {
             userCount: totalUsers,
             messageCount: totalMessages,
             oldestRoom: this.getOldestRoomAge(),
-            memoryUsageMB: this.memoryStats.memoryUsage
+            memoryUsageMB: this.memoryStats.memoryUsage,
+            uptime: process.uptime()
         };
     }
 
@@ -628,6 +677,11 @@ class RoomManager {
                         this.memoryStats.userCount = Math.max(0, this.memoryStats.userCount - room.users.size);
                         this.memoryStats.messageCount = Math.max(0, this.memoryStats.messageCount - room.messages.length);
 
+                        // Notify users first if any remain
+                        if (room.users.size > 0) {
+                            this.notifyRoomDeletion(roomCode, 'Room expired due to inactivity.');
+                        }
+
                         this.rooms.delete(roomCode);
                         deletedCount++;
 
@@ -641,14 +695,17 @@ class RoomManager {
                 if (deletedCount > 0) {
                     // Update room count after cleanup
                     this.memoryStats.roomCount = this.rooms.size;
+                    this.memoryStats.cleanupCount++;
+                    this.memoryStats.lastCleanup = now;
                     this.logger.info(`Cleanup: Deleted ${deletedCount} inactive rooms. ${this.rooms.size} rooms remaining.`);
                 }
 
                 // Always clean up timeouts to prevent memory leaks
                 this.cleanupTimeouts();
 
-                // Clean up rate limit tracking
-                this.cleanupRateLimitTracking();
+                // Update memory usage
+                const memUsage = process.memoryUsage();
+                this.memoryStats.memoryUsage = Math.round(memUsage.heapUsed / 1024 / 1024); // MB
             } catch (error) {
                 this.logger.error(`Error during room cleanup: ${error.message}`);
             }
@@ -658,54 +715,6 @@ class RoomManager {
         this.timeouts.set('cleanup-interval', intervalId);
 
         this.logger.info('Room cleanup schedule initialized');
-    }
-
-    /**
-     * Initialize memory monitoring
-     * Tracks memory usage and room statistics
-     */
-    initializeMemoryMonitoring() {
-        // Store the interval ID for potential cleanup
-        const intervalId = setInterval(() => {
-            try {
-                const memoryUsage = process.memoryUsage();
-
-                // Update memory stats
-                this.memoryStats = {
-                    lastCheck: Date.now(),
-                    roomCount: this.rooms.size,
-                    userCount: 0,
-                    messageCount: 0,
-                    memoryUsage: Math.round(memoryUsage.heapUsed / 1024 / 1024) // MB
-                };
-
-                // Count total users and messages
-                for (const room of this.rooms.values()) {
-                    this.memoryStats.userCount += room.users.size;
-                    this.memoryStats.messageCount += room.messages.length;
-                }
-
-                // Check for potential memory issues
-                const memoryThreshold = this.config.memoryWarningThreshold;
-                if (this.memoryStats.memoryUsage > memoryThreshold) {
-                    this.logger.warn(`High memory usage detected: ${this.memoryStats.memoryUsage}MB. Consider increasing cleanup frequency.`);
-
-                    // Emit event for monitoring
-                    this.emit('highMemoryUsage', this.memoryStats);
-                }
-
-                // Log memory usage periodically
-                this.logger.debug(`Memory stats: ${JSON.stringify(this.memoryStats)}`);
-
-            } catch (error) {
-                this.logger.error(`Error during memory monitoring: ${error.message}`);
-            }
-        }, this.config.memoryMonitoringInterval);
-
-        // Store the interval ID for cleanup on shutdown
-        this.timeouts.set('memory-monitoring-interval', intervalId);
-
-        this.logger.info('Memory monitoring initialized');
     }
 
     /**
@@ -736,68 +745,97 @@ class RoomManager {
 
         // Remove deleted timeouts
         deletedTimeouts.forEach(key => this.timeouts.delete(key));
-
-        if (deletedTimeouts.length > 0) {
-            this.logger.debug(`Cleaned up ${deletedTimeouts.length} stale timeouts`);
-        }
     }
 
     /**
-     * Clean up stale rate limit tracking data
-     * @private
+     * Clean up inactive rooms based on threshold
+     * @param {number} inactivityThreshold - Milliseconds of inactivity to consider a room for deletion
+     * @returns {number} Number of deleted rooms
      */
-    cleanupRateLimitTracking() {
-        try {
-            // Clean entries with 0 or negative counts
-            let cleanedEntries = 0;
+    cleanupInactiveRooms(inactivityThreshold) {
+        let deletedCount = 0;
+        const now = Date.now();
 
-            // Clean up IP room counter for IPs with 0 rooms
-            for (const [ipHash, count] of this.ipRoomCounter.entries()) {
-                if (count <= 0) {
-                    this.ipRoomCounter.delete(ipHash);
-                    cleanedEntries++;
+        // Get all rooms
+        for (const [roomCode, room] of this.rooms.entries()) {
+            // Delete if inactive for threshold time or expired
+            if ((now - room.lastActivity > inactivityThreshold) || room.isExpired()) {
+                // Notify users first if any remain
+                if (room.users.size > 0) {
+                    this.notifyRoomDeletion(roomCode, 'Room expired due to inactivity.');
                 }
-            }
 
-            if (cleanedEntries > 0) {
-                this.logger.debug(`Cleaned up ${cleanedEntries} rate limit tracking entries`);
+                this.deleteRoom(roomCode);
+                deletedCount++;
             }
-        } catch (error) {
-            this.logger.error(`Error cleaning up rate limit tracking: ${error.message}`);
         }
+
+        // Update stats
+        if (deletedCount > 0) {
+            this.memoryStats.cleanupCount++;
+            this.memoryStats.lastCleanup = now;
+        }
+
+        return deletedCount;
+    }
+
+    /**
+     * Truncate excessive messages in all rooms to reduce memory footprint
+     * @param {number} percentToKeep - Percent of messages to retain (1-100)
+     * @returns {number} Total number of messages truncated
+     */
+    truncateExcessiveMessages(percentToKeep = 75) {
+        let totalTruncated = 0;
+
+        for (const [, room] of this.rooms.entries()) {
+            const messageCount = room.messages.length;
+            const keepCount = Math.max(10, Math.ceil(messageCount * percentToKeep / 100));
+
+            if (messageCount > keepCount) {
+                const truncated = room.truncateMessages(keepCount);
+                totalTruncated += truncated;
+            }
+        }
+
+        // Update memory stats
+        if (totalTruncated > 0) {
+            this.memoryStats.messageCount -= totalTruncated;
+        }
+
+        return totalTruncated;
     }
 
     /**
      * Emit an event for monitoring
-     * @param {string} event - Event name
+     * @param {string} eventName - Event name
      * @param {Object} data - Event data
      */
-    emit(event, data) {
+    emit(eventName, data) {
         if (this.eventEmitter) {
-            this.eventEmitter.emit(event, data);
+            this.eventEmitter.emit(eventName, data);
         }
     }
 
     /**
      * Register an event listener
-     * @param {string} event - Event name
+     * @param {string} eventName - Event name
      * @param {Function} listener - Event listener
      */
-    on(event, listener) {
+    on(eventName, listener) {
         if (this.eventEmitter) {
-            this.eventEmitter.on(event, listener);
+            this.eventEmitter.on(eventName, listener);
         }
         return this;
     }
 
     /**
      * Remove an event listener
-     * @param {string} event - Event name
+     * @param {string} eventName - Event name
      * @param {Function} listener - Event listener to remove
      */
-    off(event, listener) {
+    off(eventName, listener) {
         if (this.eventEmitter) {
-            this.eventEmitter.off(event, listener);
+            this.eventEmitter.off(eventName, listener);
         }
         return this;
     }
@@ -805,10 +843,18 @@ class RoomManager {
     /**
      * Shut down the room manager gracefully
      * Clean up all resources to prevent memory leaks
+     * @param {boolean} notifyUsers - Whether to notify users about shutdown
      */
-    shutdown() {
+    shutdown(notifyUsers = true) {
         try {
             this.logger.info('Shutting down RoomManager...');
+
+            // Notify users in all rooms if requested
+            if (notifyUsers) {
+                for (const [roomCode] of this.rooms.entries()) {
+                    this.notifyRoomDeletion(roomCode, 'Server is shutting down. Please rejoin later.');
+                }
+            }
 
             // Clear all intervals and timeouts
             for (const [key, id] of this.timeouts.entries()) {
@@ -866,6 +912,11 @@ class RoomManager {
                     heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
                     external: Math.round(process.memoryUsage().external / 1024 / 1024)
                 },
+                cleanup: {
+                    count: this.memoryStats.cleanupCount,
+                    lastRun: this.memoryStats.lastCleanup,
+                    interval: this.config.cleanupInterval
+                },
                 uptime: process.uptime()
             };
 
@@ -889,6 +940,52 @@ class RoomManager {
         } catch (error) {
             this.logger.error(`Error generating metrics: ${error.message}`);
             return { error: 'Failed to generate metrics' };
+        }
+    }
+
+    /**
+     * Handle emergency memory situation by aggressively cleaning up inactive rooms
+     * @param {number} criticalThresholdMs - Critical threshold for inactivity in milliseconds
+     * @returns {number} Number of rooms deleted
+     */
+    handleLowMemory(criticalThresholdMs = 600000) { // 10 minutes by default
+        try {
+            this.logger.warn('Low memory detected, performing emergency cleanup');
+
+            // First, delete all empty rooms
+            let totalDeleted = 0;
+            const emptyRooms = [];
+
+            // Find all empty rooms
+            for (const [roomCode, room] of this.rooms.entries()) {
+                if (room.users.size === 0) {
+                    emptyRooms.push(roomCode);
+                }
+            }
+
+            // Delete all empty rooms
+            for (const roomCode of emptyRooms) {
+                this.deleteRoom(roomCode);
+                totalDeleted++;
+            }
+
+            // If that wasn't enough, truncate messages in all rooms
+            if (totalDeleted < 5) {
+                const truncated = this.truncateExcessiveMessages(50); // Keep only half of messages
+                this.logger.info(`Emergency memory cleanup: truncated ${truncated} messages`);
+            }
+
+            // If we still need to free memory, delete inactive rooms
+            if (totalDeleted < 10) {
+                const inactiveDeleted = this.cleanupInactiveRooms(criticalThresholdMs);
+                totalDeleted += inactiveDeleted;
+            }
+
+            this.logger.info(`Emergency memory cleanup complete: ${totalDeleted} rooms deleted`);
+            return totalDeleted;
+        } catch (error) {
+            this.logger.error(`Error during emergency memory cleanup: ${error.message}`);
+            return 0;
         }
     }
 }

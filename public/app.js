@@ -1,3 +1,5 @@
+// DO NOT TOUCH SYSTEM MESSAGES!
+
 const socket = io({
   transports: ['polling', 'websocket'], // Allow both for compatibility
   reconnection: true,
@@ -429,18 +431,29 @@ socket.on('roomJoined', ({ roomCode, users, messages, sessionToken, csrfToken, i
   state.sessionToken = sessionToken;
   state.csrfToken = csrfToken;
   state.isRoomOwner = isRoomOwner || false;
-  
   roomCodeDisplay.textContent = roomCode;
   navigateTo('chat-room');
   
-  // Display existing messages
-  messages.forEach(msg => addMessage(msg));
+    // Display existing messages excluding system messages
+    messages.forEach(message => {
+        if (!message.isSystem) {
+            addMessage(message);
+        }
+    });
+    // Add system message
+    addSystemMessage(`You joined room: ${roomCode}`);
+
+    // Scroll to bottom
+    scrollToBottom();
+
+    // Display current room occupants in system message excluding yourself
+    addSystemMessage(`Current occupants: ${users.filter(user => user !== state.username).join(', ')}`);
+
+    // Update users list
+    updateUsersList();
   
-  // Add system message
-  addSystemMessage(`You joined room: ${roomCode}`);
-  
-  // Show toast notification
-  showToast(`You joined room: ${roomCode}`, 'success');
+    // Show toast notification
+    showToast(`You joined room: ${roomCode}`, 'success');
 });
 
 socket.on('userJoined', ({ username, users }) => {
@@ -467,9 +480,6 @@ socket.on('userLeft', ({ username, users, newOwner }) => {
   showToast(`${username} left the room`, 'info');
 });
 
-socket.on('newMessage', (message) => {
-  addMessage(message);
-});
 
 socket.on('roomDeleted', () => {
   showToast('This room has been deleted', 'error');
@@ -534,94 +544,121 @@ function toggleModal(modal, show) {
 }
 
 function addMessage(message) {
-  // Skip system messages (they are handled by addSystemMessage)
-  if (message.username === "System") {
-    addSystemMessage(message.text);
-    return;
-  }
+    // Skip system messages (they are handled by addSystemMessage)
+    if (message.isSystem || message.username === "System") {
+        addSystemMessage(message.text);
+        return;
+    }
 
-  const li = document.createElement('li');
-  
-  // Check if this message is from the current user
-  const isCurrentUser = message.username === state.username;
-  if (isCurrentUser) {
-    li.classList.add('self-message');
-  }
-  
-  // Format timestamp
-  const timestamp = new Date(message.timestamp).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-  
-  // Create message container with avatar
-  const messageContainer = document.createElement('div');
-  messageContainer.classList.add('message-container');
-  
-  // Create avatar
-  const avatar = document.createElement('div');
-  avatar.classList.add('avatar');
-  
-  // Set avatar content - first letter of username or custom icon
-  const firstLetter = message.username.charAt(0).toUpperCase();
-  avatar.textContent = firstLetter;
-  
-  // Generate a consistent color based on username
-  const hue = getHashCode(message.username) % 360;
-  
-  if (!isCurrentUser) {
-    avatar.style.backgroundColor = `hsl(${hue}, 70%, 40%)`;
-  }
-  
-  // Create message content
-  const messageElement = document.createElement('div');
-  messageElement.classList.add('message');
-  
-  // Username
-  const usernameElement = document.createElement('div');
-  usernameElement.classList.add('username');
-  usernameElement.textContent = message.username;
-  messageElement.appendChild(usernameElement);
-  
-  // Message text
-  const textElement = document.createElement('div');
-  textElement.classList.add('text');
-  textElement.textContent = message.text;
-  messageElement.appendChild(textElement);
-  
-  // Timestamp
-  const timestampElement = document.createElement('div');
-  timestampElement.classList.add('timestamp');
-  timestampElement.textContent = timestamp;
-  
-  // Apply current timestamp visibility setting from settings manager
-  if (window.settingsManager) {
-    const settings = window.settingsManager.getSettings();
-    timestampElement.style.display = settings.showTimestamps ? 'block' : 'none';
-  }
-  
-  messageElement.appendChild(timestampElement);
-  
-  // Append avatar and message to container
-  if (isCurrentUser) {
-    // For current user, place message first, then avatar
-    messageContainer.appendChild(messageElement);
-    messageContainer.appendChild(avatar);
-  } else {
-    // For other users, place avatar first, then message
-    messageContainer.appendChild(avatar);
-    messageContainer.appendChild(messageElement);
-  }
-  
-  // Append the message container to the list item
-  li.appendChild(messageContainer);
-  
-  // Append to the messages container
-  messagesContainer.appendChild(li);
-  
-  // Scroll to bottom
-  scrollToBottom();
+    const li = document.createElement('li');
+
+    // Check if this message is from the current user
+    const isCurrentUser = message.username === state.username;
+    if (isCurrentUser) {
+        li.classList.add('self-message');
+    }
+
+    // Format timestamp
+    const timestamp = new Date(message.timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Create message container with avatar
+    const messageContainer = document.createElement('div');
+    messageContainer.classList.add('message-container');
+
+    // Create avatar
+    const avatar = document.createElement('div');
+    avatar.classList.add('avatar');
+
+    // Set avatar content - first letter of username or custom icon
+    const firstLetter = message.username.charAt(0).toUpperCase();
+    avatar.textContent = firstLetter;
+
+    // Generate a consistent color based on username
+    const hue = getHashCode(message.username) % 360;
+
+    if (!isCurrentUser) {
+        avatar.style.backgroundColor = `hsl(${hue}, 70%, 40%)`;
+    }
+
+    // Create message content
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
+
+    // Username
+    const usernameElement = document.createElement('div');
+    usernameElement.classList.add('username');
+    usernameElement.textContent = message.username;
+    messageElement.appendChild(usernameElement);
+
+    // Message text
+    const textElement = document.createElement('div');
+    textElement.classList.add('text');
+    textElement.textContent = message.text;
+    messageElement.appendChild(textElement);
+
+    // Timestamp
+    const timestampElement = document.createElement('div');
+    timestampElement.classList.add('timestamp');
+    timestampElement.textContent = timestamp;
+
+    // Apply current timestamp visibility setting from settings manager
+    if (window.settingsManager) {
+        const settings = window.settingsManager.getSettings();
+        timestampElement.style.display = settings.showTimestamps ? 'block' : 'none';
+    }
+
+    messageElement.appendChild(timestampElement);
+
+    // Append avatar and message to container
+    if (isCurrentUser) {
+        // For current user, place message first, then avatar
+        messageContainer.appendChild(messageElement);
+        messageContainer.appendChild(avatar);
+    } else {
+        // For other users, place avatar first, then message
+        messageContainer.appendChild(avatar);
+        messageContainer.appendChild(messageElement);
+    }
+
+    // Append the message container to the list item
+    li.appendChild(messageContainer);
+
+    // Append to the messages container
+    messagesContainer.appendChild(li);
+
+    // Scroll to bottom
+    scrollToBottom();
 }
+
+
+socket.on('newMessage', (message) => {
+    // Check if this is a system message
+    if (message.isSystem || message.username === 'System') {
+        addSystemMessage(message.text);
+    } else {
+        addMessage(message);
+    }
+});
+
+function addSystemMessage(text) {
+    const li = document.createElement('li');
+    li.classList.add('system-message');
+
+    // Check if it's a command message to apply special styling
+    if (text.startsWith('/')) {
+        li.classList.add('command-message');
+    }
+
+    li.textContent = text;
+    messagesContainer.appendChild(li);
+
+    // Scroll to bottom
+    scrollToBottom();
+}
+
 
 // Add this helper function to generate consistent colors from usernames
 function getHashCode(str) {
