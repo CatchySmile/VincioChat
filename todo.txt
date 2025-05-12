@@ -1,1 +1,20 @@
+Memory Management
+While you have cleanup processes for rooms and user data, there's no memory usage monitoring. For a memory-only application, this could lead to out-of-memory issues during high traffic.
+Missing Recovery Mechanism
+If the server crashes, all room and message data is lost without warning to users. Consider implementing graceful shutdown with user notifications.
 
+Code Structure Issues
+
+Inconsistent Error Handling
+Some functions return null on error, others throw exceptions, and others emit socket events. This inconsistency could lead to unhandled exceptions.
+Potential Memory Leaks
+In RoomManager.js, when incrementing the room counter, you set a timeout to decrement it after 24 hours, but these timers aren't cleared if the room is deleted earlier.
+Synchronous Crypto Operations
+Using synchronous crypto operations like createHash could block the event loop during high load.
+
+Socket Rate Limiting Issue
+The rate limiting in SecurityUtils.js has a potential flaw: when a limit is exceeded, it increments the counter but continues allowing requests even after exceeding the limit. In isRateLimited(), the count is incremented before checking if the limit is exceeded, which means a determined attacker could send more requests than intended.
+CSRF Token Implementation
+In SocketHandler.js, the timing-safe comparison for CSRF tokens is good, but the token generation in SecurityUtils.js might not be using enough entropy. Consider using a more robust token generation method with better randomness guarantees.
+Session Token Security
+The generateSessionToken function in SecurityUtils.js uses encryption with a potentially weak key (falls back to a default if not set in environment). This could make session tokens predictable if the default secret is used.
