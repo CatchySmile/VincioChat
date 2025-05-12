@@ -7,9 +7,6 @@ const User = require('./User');
 const SecurityUtils = require('../utils/SecurityUtils');
 const crypto = require('crypto');
 
-// Remove these problematic lines that were causing the error
-// const sessionToken = SecurityUtils.generateSessionToken(socket.id, room.code);
-// const room = this.roomManager.createRoom(socket.id, username, clientIp);
 
 class RoomManager {
   /**
@@ -94,7 +91,7 @@ class RoomManager {
       this.logger.info(`Room created: ${roomCode} by ${owner.username} (${ownerId})`);
       return room;
     } catch (error) {
-      this.logger.error(`Failed to create room: ${error.message}`);
+      this.logger.error(`Failed to create room `);
       return null;
     }
   }
@@ -194,7 +191,7 @@ class RoomManager {
       this.logger.info(`User ${user.username} (${userId}) joined room: ${normalizedCode}`);
       return room;
     } catch (error) {
-      this.logger.error(`Failed to join room: ${error.message}`);
+      this.logger.error(`Failed to join room `);
       return null;
     }
   }
@@ -350,7 +347,7 @@ class RoomManager {
       
       return message;
     } catch (error) {
-      this.logger.warn(`Failed to add message to room ${roomCode}: ${error.message}`);
+      this.logger.warn(`Failed to add message to room ${roomCode} `);
       return null;
     }
   }
@@ -379,7 +376,7 @@ class RoomManager {
       
       return message;
     } catch (error) {
-      this.logger.warn(`Failed to add system message to room ${roomCode}: ${error.message}`);
+      this.logger.warn(`Failed to add system message to room ${roomCode} `);
       return null;
     }
   }
