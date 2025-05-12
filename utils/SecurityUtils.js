@@ -1,6 +1,7 @@
 /**
  * Enhanced Security utility functions for the chat application
  */
+require('dotenv').config();
 const { JSDOM } = require('jsdom');
 const createDOMPurify = require('dompurify');
 const { window } = new JSDOM('');
@@ -44,7 +45,7 @@ class SecurityUtils {
   static SIZE_LIMITS = {
     MESSAGE: 500, // characters
     USERNAME: 20, // characters
-    ROOM_CODE: 12 // characters
+      ROOM_CODE: 24 // characters
   };
 
   /**
@@ -260,7 +261,7 @@ class SecurityUtils {
   static generateSessionToken(socketId, roomCode) {
     const timestamp = Date.now();
     const data = `${socketId}:${roomCode}:${timestamp}`;
-    return this.encrypt(data, process.env.TOKEN_SECRET || 'default-secret-key');
+    return this.encrypt(data, process.env.TOKEN_SECRET);
   }
 
   /**
@@ -272,7 +273,7 @@ class SecurityUtils {
    */
   static validateSessionToken(token, socketId, roomCode) {
     try {
-      const decrypted = this.decrypt(token, process.env.TOKEN_SECRET || 'default-secret-key');
+        const decrypted = this.decrypt(token, process.env.TOKEN_SECRET);
       const [tokenSocketId, tokenRoomCode, timestamp] = decrypted.split(':');
       
       // Check if token is expired
@@ -294,7 +295,7 @@ class SecurityUtils {
   static generateCSRFToken(sessionId) {
     const timestamp = Date.now().toString();
     const hash = crypto.createHash('sha256');
-    hash.update(`${sessionId}:${timestamp}:${process.env.CSRF_SECRET || 'default-csrf-secret'}`);
+    hash.update(`${sessionId}:${timestamp}:${process.env.CSRF_SECRET}`);
     return hash.digest('hex');
   }
 
@@ -306,9 +307,9 @@ class SecurityUtils {
    */
   static encrypt(text, key) {
     // Use modern crypto methods
-    const iv = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(32);
     const cipher = crypto.createCipheriv('aes-256-cbc', 
-      crypto.createHash('sha256').update(key).digest().slice(0, 32), iv);
+      crypto.createHash('sha256').update(key).digest().slice(0, 64), iv);
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -330,7 +331,7 @@ class SecurityUtils {
       const encryptedText = parts[1];
       
       const decipher = crypto.createDecipheriv('aes-256-cbc',
-        crypto.createHash('sha256').update(key).digest().slice(0, 32), iv);
+        crypto.createHash('sha256').update(key).digest().slice(0, 64), iv);
       
       let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
@@ -346,7 +347,7 @@ class SecurityUtils {
    * @returns {string} Random room code
    */
   static generateSecureRoomCode() {
-    return crypto.randomBytes(6).toString('hex').toUpperCase().slice(0, 12);
+    return crypto.randomBytes(6).toString('hex').toUpperCase().slice(0, 24);
   }
 }
 
