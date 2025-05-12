@@ -150,7 +150,7 @@ class RoomManager {
    */
   generateSecureRoomCode() {
     // Use cryptographically secure random number generator
-    return crypto.randomBytes(this.config.roomCodeLength / 2)
+      return crypto.randomBytes(this.config.roomCodeLength / 2)
       .toString('hex')
       .toUpperCase();
   }

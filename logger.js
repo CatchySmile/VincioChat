@@ -59,8 +59,8 @@ const config = {
   
   // Identifier pattern matches items to hash
   identifierPatterns: [
-    /([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})/, // UUIDs
-    /\b([0-9A-Fa-f]{12,})\b/g,   // Room codes and long hex strings
+    /([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{24})/, // UUIDs
+    /\b([0-9A-Fa-f]{24,})\b/g,   // Room codes and long hex strings
     /\b(socket\.id|socketId|userId)[:=]\s*["']?(\w+)["']?/gi // Socket IDs
   ]
 };
@@ -79,8 +79,8 @@ function createPrivacyHash(identifier) {
   const hash = crypto.createHash('sha256');
   hash.update(identifier + config.hashingSalt);
   // Return only first 6 characters - enough to identify in logs
-  // but not enough to reverse-engineer the original value
-  return hash.digest('hex').substring(0, 6);
+    // but not enough to reverse-engineer the original value
+    return hash.digest('hex').substring(0, 6);
 }
 
 /**
