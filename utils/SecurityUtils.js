@@ -45,7 +45,7 @@ class SecurityUtils {
   static SIZE_LIMITS = {
     MESSAGE: 500, // characters
     USERNAME: 20, // characters
-      ROOM_CODE: 24 // characters
+    ROOM_CODE: 24 // characters
   };
 
   /**
@@ -307,7 +307,7 @@ class SecurityUtils {
    */
   static encrypt(text, key) {
     // Use modern crypto methods
-    const iv = crypto.randomBytes(32);
+    const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', 
       crypto.createHash('sha256').update(key).digest().slice(0, 64), iv);
     
@@ -347,7 +347,7 @@ class SecurityUtils {
    * @returns {string} Random room code
    */
   static generateSecureRoomCode() {
-    return crypto.randomBytes(6).toString('hex').toUpperCase().slice(0, 24);
+    return crypto.randomBytes(12).toString('hex').toUpperCase().slice(0, 24);
   }
 }
 
