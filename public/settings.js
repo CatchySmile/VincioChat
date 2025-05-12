@@ -160,7 +160,7 @@ class SettingsManager {
     if (this._initialized) return;
     
     try {
-      const storedSettings = localStorage.getItem('scratchyChatSettings');
+      const storedSettings = localStorage.getItem('vincioChatSettings');
       
       if (storedSettings) {
         // Try-catch to handle invalid JSON
@@ -294,7 +294,7 @@ updateSettings(newSettings) {
   
   // Save to localStorage
   try {
-    localStorage.setItem('scratchyChatSettings', JSON.stringify(this._settings));
+    localStorage.setItem('vincioChatSettings', JSON.stringify(this._settings));
   } catch (error) {
     console.error('Failed to save settings:', error);
     return false;
@@ -317,7 +317,7 @@ resetSettings() {
   this._settings = this._getDefaultSettings();
   
   try {
-    localStorage.setItem('scratchyChatSettings', JSON.stringify(this._settings));
+    localStorage.setItem('vincioChatSettings', JSON.stringify(this._settings));
   } catch (error) {
     console.error('Failed to save default settings:', error);
   }
