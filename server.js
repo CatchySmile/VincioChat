@@ -188,6 +188,19 @@ app.use((req, res, next) => {
 });
 
 // Graceful shutdown handling
+process.on('SIGINT', () => {
+    logger.info('SIGINT received, shutting down gracefully');
+    server.close(() => {
+        logger.info('Server closed');
+        process.exit(0);
+    });
+
+    // If server hasn't closed in 10 seconds, force shutdown
+    setTimeout(() => {
+        logger.error('Server shutdown timeout, forcing exit');
+        process.exit(1);
+    }, 10000);
+});
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   server.close(() => {
