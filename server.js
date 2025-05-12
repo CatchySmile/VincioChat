@@ -100,7 +100,6 @@ app.use((req, res, next) => {
 });
 
 // Use other security headers
-app.use(helmet.xssFilter());
 app.use(helmet.noSniff());
 app.use(helmet.frameguard({ action: 'deny' }));
 app.use(helmet.hsts({
