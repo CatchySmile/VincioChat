@@ -1,5 +1,5 @@
 Memory Management
-While we have cleanup processes for rooms and user data, there's no memory usage monitoring. For a memory-only application, this could lead to out-of-memory issues during high traffic.
+While you have cleanup processes for rooms and user data, there's no memory usage monitoring. For a memory-only application, this could lead to out-of-memory issues during high traffic.
 Missing Recovery Mechanism
 If the server crashes, all room and message data is lost without warning to users. Consider implementing graceful shutdown with user notifications.
 

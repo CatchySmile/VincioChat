@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vincio Chat Room</title>
+    <!-- Loading screen CSS -->
+    <link rel="stylesheet" href="./styles/loading.css">
+    <!-- Loading script - add before other scripts -->
+    <script src="./loading.js"></script>
+    <!-- Main styles -->
     <link rel="stylesheet" href="./styles/dark.css">
     <link rel="stylesheet" href="./styles/settings.css">
     <link rel="stylesheet" href="./styles/themes.css">
@@ -29,71 +34,71 @@
             justify-content: center !important;
             backdrop-filter: blur(4px) !important;
         }
-        
+
         #toast-container {
             position: fixed !important;
-            top: 1rem !important; 
+            top: 1rem !important;
             right: 1rem !important;
             z-index: 10001 !important;
         }
-        </style>
-        
-        <script>
+    </style>
+
+    <script>
         // Emergency modal fix - ensures modals will display over everything
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Force show modal function that overrides any styling issues
-            window.forceShowModal = function(modalId) {
+            window.forceShowModal = function (modalId) {
                 const modal = document.getElementById(modalId);
                 if (!modal) return false;
-                
+
                 modal.style.cssText = `
-                    display: flex !important;
-                    position: fixed !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    right: 0 !important;
-                    bottom: 0 !important;
-                    width: 100% !important;
-                    height: 100% !important;
-                    background-color: rgba(10, 10, 15, 0.85) !important;
-                    z-index: 9999 !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                `;
-                
+                        display: flex !important;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        bottom: 0 !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        background-color: rgba(10, 10, 15, 0.85) !important;
+                        z-index: 9999 !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                    `;
+
                 return true;
             };
-            
+
             // Add emergency overrides to settings button
             const settingsBtn = document.getElementById('settings-btn');
             if (settingsBtn) {
-                settingsBtn.addEventListener('click', function(e) {
+                settingsBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     forceShowModal('settings-modal');
                 });
             }
-            
+
             // Add emergency overrides to users button
             const showUsersBtn = document.getElementById('show-users-btn');
             if (showUsersBtn) {
-                showUsersBtn.addEventListener('click', function(e) {
+                showUsersBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     forceShowModal('users-modal');
                 });
             }
-            
+
             // Add emergency overrides to leave button
             const leaveRoomBtn = document.getElementById('leave-room-btn');
             if (leaveRoomBtn) {
-                leaveRoomBtn.addEventListener('click', function(e) {
+                leaveRoomBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     forceShowModal('leave-confirm-modal');
                 });
             }
-            
+
             console.log('Emergency modal fixes applied');
         });
-        </script>
+    </script>
 </head>
 <body>
     <div class="container">
@@ -112,7 +117,7 @@
                 <a href="#" id="tos-link">Terms of Service & Privacy Policy</a>
             </p>
         </div>
-        
+
         <!-- Room Selection Screen -->
         <div id="room-selection" class="hidden">
             <div class="card">
@@ -127,7 +132,7 @@
                 <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
                     Enter a room code to join an existing conversation
                 </p>
-                
+
                 <div class="input-group">
                     <input type="text" id="room-code-input" placeholder="Enter room code" maxlength="24">
                 </div>
@@ -141,7 +146,7 @@
                 <h2>Room: <span id="room-code-display"></span></h2>
                 <div class="chat-controls">
                     <button id="settings-btn" class="icon-btn" title="Settings">
-                      <i class="fas fa-cog"></i>
+                        <i class="fas fa-cog"></i>
                     </button>
                     <button id="copy-room-code" class="icon-btn" title="Copy room code">
                         <i class="fas fa-copy"></i>
@@ -173,7 +178,7 @@
 
     <!-- Load Socket.IO client from server -->
     <script src="/socket.io/socket.io.js"></script>
-    
+
     <!-- MODALS - Moved to root level outside container -->
     <!-- User List Modal -->
     <div id="users-modal" class="modal">
@@ -233,7 +238,7 @@
                             <span>When a room is deleted, all messages and information are permanently erased.</span>
                         </li>
                     </ul>
-                    
+
                     <h4 style="margin: 1.2rem 0 0.8rem; color: var(--accent-primary);">Terms of Service</h4>
                     <ul style="list-style-type: none; padding-left: 0;">
                         <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
@@ -245,12 +250,12 @@
                             <span>Vincio Chat is provided "as-is" for personal and experimental use only.</span>
                         </li>
                     </ul>
-                        
+
                     <!-- Legal Information Button -->
                     <div style="text-align: center; margin-top: 1.5rem;">
-                        <a href="/legal.html" target="_blank" class="primary-btn" 
+                        <a href="/legal.html" target="_blank" class="primary-btn"
                            style="text-decoration: none; display: inline-block; padding: 0.6rem 1.2rem; width: auto;">
-                           <i class="fas fa-gavel"></i> Full Legal Information
+                            <i class="fas fa-gavel"></i> Full Legal Information
                         </a>
                     </div>
                 </div>
@@ -303,7 +308,7 @@
                 <!-- Theme Settings -->
                 <div class="settings-section theme">
                     <h4>Appearance</h4>
-                    
+
                     <!-- Theme Selection -->
                     <div class="settings-option">
                         <label for="theme-select">Theme:</label>
@@ -316,7 +321,7 @@
                             <option value="matrix">Matrix</option>
                         </select>
                     </div>
-                    
+
                     <!-- Accent Color -->
                     <div class="settings-option">
                         <label for="accent-color-select">Accent Color:</label>
@@ -329,13 +334,13 @@
                             <option value="black">Black</option>
                         </select>
                     </div>
-                    
+
                 </div>
-                
+
                 <!-- Notification Settings -->
                 <div class="settings-section notifications">
                     <h4>Notifications</h4>
-                    
+
                     <!-- Sound Notifications -->
                     <div class="settings-option">
                         <label for="notification-toggle">Enable toasts</label>
@@ -344,7 +349,7 @@
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
-                    
+
                     <!-- Toast Duration -->
                     <div class="settings-option">
                         <label for="toast-duration-select">Toast Duration:</label>
@@ -356,11 +361,11 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <!-- Message Settings -->
                 <div class="settings-section messages">
                     <h4>Messages</h4>
-                    
+
                     <!-- Show Timestamps -->
                     <div class="settings-option">
                         <label for="message-timestamp-toggle">Show timestamps</label>
@@ -369,7 +374,7 @@
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
-                        <!-- Font Size -->
+                    <!-- Font Size -->
                     <div class="settings-option">
                         <label for="font-size-select">Font Size:</label>
                         <select id="font-size-select">
@@ -386,7 +391,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Kick User Modal (Created dynamically via JS) -->
     <div id="kick-confirm-modal" class="modal">
         <div class="modal-content">
