@@ -56,7 +56,7 @@ const state = {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-  showToast('Welcome to Scratchy Chat', 'info');
+  showToast('Welcome to Vincio Chat', 'info');
   
   // Pre-populate username with random identifier
   usernameInput.value = `User${Math.floor(Math.random() * 10000)}`;
