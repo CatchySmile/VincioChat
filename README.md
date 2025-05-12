@@ -1,6 +1,6 @@
-# Scratchy Chat
+# Vincio Chat
 
-Scratchy Chat is a secure, ephemeral web-based chat application that allows users to create or join chat rooms using WebSockets . Built with privacy in mind, it stores all data temporarily in memory and we have a zero log & zero data retention design.
+Vincio Chat is a secure, ephemeral web-based chat application that allows users to create or join chat rooms using WebSockets . Built with privacy in mind, it stores all data temporarily in memory and we have a zero log & zero data retention design.
 ## Features
 
 - **Secure Room Management**
@@ -106,7 +106,7 @@ Project Root/
 
 1. Clone the repository or extract the zip:
     ```bash
-    git clone https://github.com/CatchySmile/ScratchyChat.git
+    git clone https://github.com/CatchySmile/VincioChat.git
     ```
 
 2. Install dependencies:
