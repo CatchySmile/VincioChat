@@ -55,7 +55,10 @@ class SocketHandler {
       this.logger.info(`Cleaned up ${cleanedCount} inactive socket entries`);
     }
   }
-  
+
+
+
+
   /**
    * Gets client IP address from socket handshake
    * @param {Object} socket - Socket.IO socket

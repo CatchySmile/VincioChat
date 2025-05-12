@@ -314,7 +314,7 @@ class SecurityUtils {
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     
-    // Return IV + encrypted data
+      // Return IV + encrypted data
     return iv.toString('hex') + ':' + encrypted;
   }
 

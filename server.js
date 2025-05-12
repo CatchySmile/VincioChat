@@ -190,12 +190,9 @@ app.use((req, res, next) => {
 // Graceful shutdown handling
 process.on('SIGINT', () => {
     logger.info('SIGINT received, shutting down gracefully');
-    // Clean
-    roomManager.closeAllRooms();
-    socketHandler.closeAllConnections();
-    // Close all connections
-    io.close(() => {
-        logger.info('Socket connections closed');
+    // Close all active sockets
+    io.sockets.sockets.forEach(socket => {
+        socket.disconnect(true);
     });
 
     // Close the server
@@ -212,18 +209,17 @@ process.on('SIGINT', () => {
 });
 process.on('SIGTERM', () => {
     logger.info('SIGTERM received, shutting down gracefully');
-    // Clean
-    roomManager.closeAllRooms();
-    socketHandler.closeAllConnections();
-    // Close all connections
-    io.close(() => {
-        logger.info('Socket connections closed');
+
+    // Close all active sockets
+    io.sockets.sockets.forEach(socket => {
+        socket.disconnect(true);
     });
 
-  server.close(() => {
-    logger.info('Server closed');
-    process.exit(0);
-  });
+    // Close the server
+    server.close(() => {
+        logger.info('Server closed');
+        process.exit(0);
+    });
   
   // If server hasn't closed in 10 seconds, force shutdown
   setTimeout(() => {
@@ -239,6 +235,15 @@ const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
 server.listen(PORT, HOST, () => {
   logger.info(`Server listening on ${HOST}:${PORT}`);
 });
+
+// Handle uncaught exceptions and unhandled rejections
+process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection:', reason);
+});
+
 
 // Export for testing
 module.exports = { app, server, io };
