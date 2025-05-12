@@ -196,10 +196,10 @@ function handleJoinRoom() {
     return;
   }
   
-  // Check if room code length exceeds 12 characters
-  if (roomCode.length > 12) {
+  // Check if room code length exceeds 24 characters
+  if (roomCode.length > 24) {
     roomCodeInput.value = '';
-    showToast('Room code cannot exceed 12 characters', 'error');
+    showToast('Room code cannot exceed 24 characters', 'error');
     return;
   }
   
