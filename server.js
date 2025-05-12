@@ -190,6 +190,15 @@ app.use((req, res, next) => {
 // Graceful shutdown handling
 process.on('SIGINT', () => {
     logger.info('SIGINT received, shutting down gracefully');
+    // Clean
+    roomManager.closeAllRooms();
+    socketHandler.closeAllConnections();
+    // Close all connections
+    io.close(() => {
+        logger.info('Socket connections closed');
+    });
+
+    // Close the server
     server.close(() => {
         logger.info('Server closed');
         process.exit(0);
@@ -202,7 +211,15 @@ process.on('SIGINT', () => {
     }, 10000);
 });
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+    logger.info('SIGTERM received, shutting down gracefully');
+    // Clean
+    roomManager.closeAllRooms();
+    socketHandler.closeAllConnections();
+    // Close all connections
+    io.close(() => {
+        logger.info('Socket connections closed');
+    });
+
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
