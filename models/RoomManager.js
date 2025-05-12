@@ -108,7 +108,7 @@ class RoomManager {
   hashIdentifier(identifier) {
     const hash = crypto.createHash('sha256');
     // Use a constant salt to prevent correlation across app restarts
-    const salt = process.env.HASH_SALT || 'scratchy-chat-privacy-salt';
+    const salt = process.env.HASH_SALT || 'vincio-chat-privacy-salt';
     hash.update(identifier + salt);
     // Return only first 8 characters - enough for differentiation
     // but not enough to reconstruct the original value
