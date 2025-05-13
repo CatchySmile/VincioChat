@@ -996,7 +996,9 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       });
   });
-  
+
+
+
   // Global functions to control modals
   window.showModal = openModal;
   window.hideModal = closeModal;

@@ -249,6 +249,61 @@ main {
   max-width: 800px;
 }
 
+#analytics .legal-card,
+#hosting .legal-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    #analytics .legal-card:hover,
+    #hosting .legal-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px var(--shadow-color);
+    }
+
+/* List styling for privacy and service lists */
+.privacy-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 1rem 0;
+}
+
+    .privacy-list li {
+        position: relative;
+        padding-left: 28px;
+        margin-bottom: 0.5rem;
+        line-height: 1.5;
+    }
+
+        .privacy-list li::before {
+            content: '\f058'; /* Font Awesome check circle icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--accent-primary);
+        }
+
+/* External link styling */
+.legal-card a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    transition: color 0.2s ease, border-bottom 0.2s ease;
+    border-bottom: 1px dotted var(--accent-tertiary);
+}
+
+    .legal-card a:hover {
+        color: var(--accent-hover);
+        border-bottom: 1px solid var(--accent-hover);
+    }
+
+/* Icon styling in legal cards */
+.legal-card h3 i {
+    color: var(--accent-primary);
+    margin-right: 0.5rem;
+    width: 20px;
+    text-align: center;
+}
+
 /* Legal Cards */
 .legal-card {
   background-color: var(--bg-secondary);
