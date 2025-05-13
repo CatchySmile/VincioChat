@@ -261,7 +261,7 @@ class SocketHandler {
             // Create the room with client IP for the user
             const room = this.roomManager.createRoom(socket.id, username, clientIp);
             if (!room) {
-                socket.emit('error', 'Failed to create room. Server may be at capacity.');
+                socket.emit('error', 'Failed to create room. Server may be at capacity');
                 return;
             }
 

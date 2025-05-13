@@ -27,17 +27,31 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "*", // Allow all origins in development
-        methods: ["GET", "POST"],
-        credentials: true
+        origin: "*",
+        methods: ["GET", "POST", "OPTIONS"],
+        credentials: true,
+        allowedHeaders: ["Content-Type", "Authorization"]
     },
-    // Allow both polling and websocket for better compatibility
-    transports: ['polling', 'websocket'],
-    // Enable EIO version 3 for compatibility
     allowEIO3: true,
-    // Connection timeout
+    transports: ['polling', 'websocket'],
+    path: '/socket.io/',
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    maxHttpBufferSize: 1e8
+});
+
+// Add debug logging for Socket.IO connections
+io.on('connection', (socket) => {
+    console.log('New client connected:', socket.id);
+
+    socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
+    });
+
+    socket.on('error', (error) => {
+        console.error('Socket error:', error);
+    });
 });
 
 app.get('/socket.io/socket.io.js', (req, res) => {
