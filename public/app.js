@@ -1,11 +1,13 @@
 // DO NOT TOUCH SYSTEM MESSAGES!
 
 const socket = io({
-  transports: ['polling', 'websocket'], // Allow both for compatibility
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  timeout: 20000
+    transports: ['websocket'], // Prefer WebSocket
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 20000,
+    secure: true, // Force secure connection
+    rejectUnauthorized: true // Verify certificate
 });
 
 // DOM Elements
