@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
 
 // 404 for unknown routes
 app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    res.status(404).sendFile(path.join(__dirname, 'public', 'error.html'));
 });
 
 // Start server
