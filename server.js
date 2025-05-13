@@ -27,18 +27,24 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "*",
+        origin: process.env.ALLOWED_ORIGINS || "https://vincio.cc",
         methods: ["GET", "POST", "OPTIONS"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"]
     },
+    transports: ['websocket'], // Prefer WebSocket over polling
     allowEIO3: true,
-    transports: ['polling', 'websocket'],
     path: '/socket.io/',
     pingTimeout: 60000,
     pingInterval: 25000,
     upgradeTimeout: 30000,
-    maxHttpBufferSize: 1e8
+    maxHttpBufferSize: 1e6, // Limit message size to 1MB
+    cookie: {
+        name: "vincio_io",
+        httpOnly: true,
+        secure: true, // Force secure cookies
+        sameSite: "strict"
+    }
 });
 
 // Add debug logging for Socket.IO connections
