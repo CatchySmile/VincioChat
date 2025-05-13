@@ -2,412 +2,85 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vincio Chat Room</title>
-    <!-- Main styles -->
-    <script src="/socket.io/socket.io.js"></script>
-    <link rel="stylesheet" href="./styles/dark.css">
-    <link rel="stylesheet" href="./styles/settings.css">
-    <link rel="stylesheet" href="./styles/themes.css">
-    <link rel="stylesheet" href="./styles/zbase.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <title>Coming Soon - Vincio Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles/dark.css">
+    <!-- Font Awesome for icons (optional, for WIP icon) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        /* Emergency modal override styles */
-        .modal {
-            display: none;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            background-color: rgba(10, 10, 15, 0.85) !important;
-            z-index: 9999 !important;
-            align-items: center !important;
-            justify-content: center !important;
-            backdrop-filter: blur(4px) !important;
+        body, html {
+            height: 100%;
+            min-height: 100vh;
         }
-
-        #toast-container {
-            position: fixed !important;
-            top: 1rem !important;
-            right: 1rem !important;
-            z-index: 10001 !important;
+        .coming-soon-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+            padding: var(--space-lg);
+        }
+        .coming-soon-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 8px 24px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            padding: var(--space-xl) var(--space-lg);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.7s;
+        }
+        .coming-soon-icon {
+            font-size: 3rem;
+            color: var(--accent-primary);
+            margin-bottom: var(--space-md);
+            animation: pulse 2s infinite;
+        }
+        .coming-soon-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+            letter-spacing: -0.02em;
+        }
+        .coming-soon-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: var(--space-lg);
+        }
+        .back-btn {
+            background: var(--gradient-accent);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background var(--transition-normal), box-shadow var(--transition-normal);
+            box-shadow: 0 4px 10px rgba(98, 0, 234, 0.2);
+        }
+        .back-btn:hover {
+            background: var(--gradient-accent-hover);
+            box-shadow: 0 6px 16px rgba(98, 0, 234, 0.3);
         }
     </style>
-
-    <script>
-        // Emergency modal fix - ensures modals will display over everything
-        document.addEventListener('DOMContentLoaded', function () {
-            // Force show modal function that overrides any styling issues
-            window.forceShowModal = function (modalId) {
-                const modal = document.getElementById(modalId);
-                if (!modal) return false;
-
-                modal.style.cssText = `
-                            display: flex !important;
-                            position: fixed !important;
-                            top: 0 !important;
-                            left: 0 !important;
-                            right: 0 !important;
-                            bottom: 0 !important;
-                            width: 100% !important;
-                            height: 100% !important;
-                            background-color: rgba(10, 10, 15, 0.85) !important;
-                            z-index: 9999 !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                        `;
-
-                return true;
-            };
-
-            // Add emergency overrides to settings button
-            const settingsBtn = document.getElementById('settings-btn');
-            if (settingsBtn) {
-                settingsBtn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    forceShowModal('settings-modal');
-                });
-            }
-
-            // Add emergency overrides to users button
-            const showUsersBtn = document.getElementById('show-users-btn');
-            if (showUsersBtn) {
-                showUsersBtn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    forceShowModal('users-modal');
-                });
-            }
-
-            // Add emergency overrides to leave button
-            const leaveRoomBtn = document.getElementById('leave-room-btn');
-            if (leaveRoomBtn) {
-                leaveRoomBtn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    forceShowModal('leave-confirm-modal');
-                });
-            }
-
-            console.log('Emergency modal fixes applied');
-        });
-    </script>
 </head>
 <body>
-    <div class="container">
-        <!-- Welcome Screen -->
-        <div id="welcome-screen">
-            <h1>Vincio Chat</h1>
-            <div class="input-group">
-                <label for="username-input">Choose a username</label>
-                <input type="text" id="username-input" placeholder="Enter username" maxlength="20">
+    <div class="coming-soon-container">
+        <div class="coming-soon-card">
+            <div class="coming-soon-icon">
+                <i class="fas fa-tools"></i>
             </div>
-            <button id="continue-btn" class="primary-btn">
-                <i class="fas fa-arrow-right"></i> Continue
-            </button>
-            <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">
-                By continuing, you agree to our
-                <a href="#" id="tos-link">Terms of Service & Privacy Policy</a>
-            </p>
-        </div>
-
-        <!-- Room Selection Screen -->
-        <div id="room-selection" class="hidden">
-            <div class="card">
-                <h3><i class="fas fa-plus-circle"></i> Create a New Room</h3>
-                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                    Start a new chat room and invite others to chat
-                </p>
-                <button id="create-room-btn" class="primary-btn">Create Room</button>
+            <div class="coming-soon-title">Coming Soon</div>
+            <div class="coming-soon-text">
+                This feature is a work in progress.<br>
+                Please check back later!
             </div>
-            <div class="card">
-                <h3><i class="fas fa-sign-in-alt"></i> Join Existing Room</h3>
-                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                    Enter a room code to join an existing conversation
-                </p>
-
-                <div class="input-group">
-                    <input type="text" id="room-code-input" placeholder="Enter room code" maxlength="24">
-                </div>
-                <button id="join-room-btn" class="primary-btn">Join Room</button>
-            </div>
-        </div>
-
-        <!-- Chat Room Screen -->
-        <div id="chat-room" class="hidden">
-            <div class="chat-header">
-                <h2>Room: <span id="room-code-display"></span></h2>
-                <div class="chat-controls">
-                    <button id="settings-btn" class="icon-btn" title="Settings">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <button id="copy-room-code" class="icon-btn" title="Copy room code">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                    <button id="show-users-btn" class="icon-btn" title="Show users">
-                        <i class="fas fa-users"></i>
-                    </button>
-                    <button id="leave-room-btn" class="icon-btn warning" title="Leave room">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="chat-content">
-                <div id="messages-container">
-                    <ul id="messages"></ul>
-                </div>
-            </div>
-            <form id="message-form">
-                <input type="text" id="message-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
-                <button type="submit" id="send-btn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </form>
+            <button class="back-btn" onclick="window.history.back()">Go Back</button>
         </div>
     </div>
-
-    <!-- Toast Notifications -->
-    <div id="toast-container"></div>
-
-    <!-- MODALS - Moved to root level outside container -->
-    <!-- User List Modal -->
-    <div id="users-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-users"></i> Users in Room</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <ul id="user-list"></ul>
-            </div>
-            <div class="modal-footer admin-controls hidden">
-                <button id="delete-room-btn" class="danger-btn">
-                    <i class="fas fa-trash-alt"></i> Delete Room
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Leave Room Confirmation Modal -->
-    <div id="leave-confirm-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-question-circle"></i> Leave Room?</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to leave the chat room?</p>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                    You won't be able to see any new messages after leaving.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button class="primary-btn">Yes, Leave</button>
-                <button class="danger-btn">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- TOS Modal -->
-    <div id="tos-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Terms & Privacy</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body" style="max-height: 300px; overflow-y: auto;">
-                <div>
-                    <h4 style="margin-bottom: 0.8rem; color: var(--accent-primary);">Privacy Policy</h4>
-                    <ul style="list-style-type: none; padding-left: 0;">
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
-                            <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
-                            <span>We do not store chat logs, IP addresses, or any identifying data. Everything is kept in memory only during the session.</span>
-                        </li>
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
-                            <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
-                            <span>When a room is deleted, all messages and information are permanently erased.</span>
-                        </li>
-                    </ul>
-
-                    <h4 style="margin: 1.2rem 0 0.8rem; color: var(--accent-primary);">Terms of Service</h4>
-                    <ul style="list-style-type: none; padding-left: 0;">
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
-                            <i class="fas fa-exclamation-circle" style="color: var(--warning); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
-                            <span>By using Vincio Chat, you agree not to misuse the platform. Abuse or illegal activity are not tolerated.</span>
-                        </li>
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
-                            <i class="fas fa-exclamation-circle" style="color: var(--warning); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
-                            <span>Vincio Chat is provided "as-is" for personal and experimental use only.</span>
-                        </li>
-                    </ul>
-
-                    <!-- Legal Information Button -->
-                    <div style="text-align: center; margin-top: 1.5rem;">
-                        <a href="/legal.html" target="_blank" class="primary-btn"
-                           style="text-decoration: none; display: inline-block; padding: 0.6rem 1.2rem; width: auto;">
-                            <i class="fas fa-gavel"></i> Full Legal Information
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="primary-btn" id="close-tos-btn">
-                    <i class="fas fa-check"></i> I Understand
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Command Help Modal -->
-    <div id="command-help-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-terminal"></i> Available Commands</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <ul style="list-style-type: none; padding-left: 0;">
-                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/help</code>
-                        <p style="margin-top: 0.5rem;">Display available commands</p>
-                    </li>
-                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/clear</code>
-                        <p style="margin-top: 0.5rem;">Clear your chat history (only for you)</p>
-                    </li>
-                    <li style="margin-bottom: 1rem;">
-                        <code style="background: var(--bg-tertiary); padding: 0.3rem 0.5rem; border-radius: 4px; font-family: 'Roboto Mono', monospace;">/leave</code>
-                        <p style="margin-top: 0.5rem;">Leave the current room</p>
-                    </li>
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button class="primary-btn" id="close-command-help-btn">Got it</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-cog"></i> Settings</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <!-- Theme Settings -->
-                <div class="settings-section theme">
-                    <h4>Appearance</h4>
-
-                    <!-- Theme Selection -->
-                    <div class="settings-option">
-                        <label for="theme-select">Theme:</label>
-                        <select id="theme-select">
-                            <option value="dark">Dark</option>
-                            <option value="light">Light</option>
-                            <option value="material">Material</option>
-                            <option value="mint">Mint</option>
-                            <option value="blackred">Midnight Red</option>
-                            <option value="matrix">Matrix</option>
-                        </select>
-                    </div>
-
-                    <!-- Accent Color -->
-                    <div class="settings-option">
-                        <label for="accent-color-select">Accent Color:</label>
-                        <select id="accent-color-select">
-                            <option value="purple">Purple</option>
-                            <option value="blue">Blue</option>
-                            <option value="red">Red</option>
-                            <option value="green">Green</option>
-                            <option value="pink">Pink</option>
-                            <option value="black">Black</option>
-                        </select>
-                    </div>
-
-                </div>
-
-                <!-- Notification Settings -->
-                <div class="settings-section notifications">
-                    <h4>Notifications</h4>
-
-                    <!-- Sound Notifications -->
-                    <div class="settings-option">
-                        <label for="notification-toggle">Enable toasts</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notification-toggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-
-                    <!-- Toast Duration -->
-                    <div class="settings-option">
-                        <label for="toast-duration-select">Toast Duration:</label>
-                        <select id="toast-duration-select">
-                            <option value="2000">Short (2s)</option>
-                            <option value="3000">Normal (3s)</option>
-                            <option value="5000">Long (5s)</option>
-                            <option value="8000">Extra Long (8s)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Message Settings -->
-                <div class="settings-section messages">
-                    <h4>Messages</h4>
-
-                    <!-- Show Timestamps -->
-                    <div class="settings-option">
-                        <label for="message-timestamp-toggle">Show timestamps</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="message-timestamp-toggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <!-- Font Size -->
-                    <div class="settings-option">
-                        <label for="font-size-select">Font Size:</label>
-                        <select id="font-size-select">
-                            <option value="small">Small</option>
-                            <option value="medium">Medium</option>
-                            <option value="large">Large</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="reset-settings-btn" class="secondary-btn">Reset Defaults</button>
-                <button id="save-settings-btn" class="primary-btn">Save Settings</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Kick User Modal (Created dynamically via JS) -->
-    <div id="kick-confirm-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-user-slash"></i> Kick User</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to kick <span id="kick-username"></span> from the room?</p>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                    This user will not be able to rejoin unless they know the room code.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button id="confirm-kick-btn" class="danger-btn">Yes, Kick User</button>
-                <button id="cancel-kick-btn" class="primary-btn">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="settings.js"></script>
-    <script src="app.js"></script>
 </body>
 </html>
