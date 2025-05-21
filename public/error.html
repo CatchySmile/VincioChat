@@ -26,11 +26,10 @@
         </p>
         
         <div style="display: flex; justify-content: center; margin-top: 1.5rem;">
-            <a href="/" style="text-decoration: none;">
+            <a href="/" style="text-decoration: none;">            </a>
                 <button class="primary-btn" style="min-width: 160px;">
                     <i class="fas fa-home"></i> Go to Home
                 </button>
-            </a>
         </div>
     </div>
 
@@ -49,10 +48,10 @@
             }
         }, 1000);
         
-        // Allow user to cancel redirect by hovering over the button
-        document.querySelector('.primary-btn').addEventListener('mouseenter', () => {
-            clearInterval(countdownInterval);
-            countdownElement.parentElement.textContent = 'Redirect paused. Click the button to go home.';
+
+        // Change to main page if the user clicks the button
+        document.querySelector('.primary-btn').addEventListener('click', () => {
+            window.location.href = '/';
         });
     </script>
 </body>
