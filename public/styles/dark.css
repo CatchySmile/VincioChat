@@ -8,8 +8,10 @@
     --text-secondary: #c2c2c2;
     /* Accent Colors */
     --accent-primary: #8a54fd;
+    --accent-disabled: #37206b;
     --accent-secondary: #6a3dd8;
     --accent-tertiary: #4728a0;
+    --accent-tertiary-disabled: #2c156b;
     --accent-hover: #9d73ff;
     /* Notification Colors */
     --danger: #ff3c5c;
@@ -346,6 +348,18 @@ input:checked + .toggle-slider {
         transition: all var(--transition-normal) ease;
         font-family: inherit;
     }
+input:disabled + .toggle-slider {
+    background-color: var(--accent-disabled);
+    border-color: var(--accent-tertiary-disabled);
+}
+
+    input:disabled + .toggle-slider:before {
+        transform: translateX(21px);
+        background-color: gray;
+        font-size: 1rem;
+        transition: all var(--transition-normal) ease;
+        font-family: inherit;
+    }
 
 input[type="text"]:hover {
     border-color: var(--accent-tertiary);
@@ -517,7 +531,7 @@ input[type="text"]:focus {
 
 /* Self Message Styling */
 .self-message .message {
-    background-color: var(rgba(255, 255, 255, 0.5));
+    background-color: rgba(165, 165, 255, 0.1) 
 }
 
 /* User Avatar Styling */

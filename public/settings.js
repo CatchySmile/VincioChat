@@ -555,171 +555,192 @@ bindSettingsFormControls();
 * Bind settings form controls to the settings manager
 */
 function bindSettingsFormControls() {
-const themeSelect = document.getElementById('theme-select');
-const accentColorSelect = document.getElementById('accent-color-select');
-const notificationToggle = document.getElementById('notification-toggle');
-const toastDurationSelect = document.getElementById('toast-duration-select');
-const timestampToggle = document.getElementById('message-timestamp-toggle');
-const fontSizeSelect = document.getElementById('font-size-select');
-const settingsModal = document.getElementById('settings-modal');
+    const themeSelect = document.getElementById('theme-select');
+    const accentColorSelect = document.getElementById('accent-color-select');
+    const notificationToggle = document.getElementById('notification-toggle');
+    const toastDurationSelect = document.getElementById('toast-duration-select');
+    const timestampToggle = document.getElementById('message-timestamp-toggle');
+    const fontSizeSelect = document.getElementById('font-size-select');
+    const settingsModal = document.getElementById('settings-modal');
 
-if (!settingsModal) {
-  console.error('Settings modal not found in the DOM');
-  return;
-}
-
-// Get current settings
-const settings = settingsManager.getSettings();
-
-// Update form to match current settings
-if (themeSelect) themeSelect.value = settings.theme;
-if (accentColorSelect) accentColorSelect.value = settings.accentColor;
-if (notificationToggle) notificationToggle.checked = settings.notifications;
-if (toastDurationSelect) toastDurationSelect.value = settings.toastDuration.toString();
-if (timestampToggle) timestampToggle.checked = settings.showTimestamps;
-if (fontSizeSelect) fontSizeSelect.value = settings.fontSize;
-
-// Add theme select preview handler
-if (themeSelect) {
-  themeSelect.addEventListener('change', function() {
-    settingsManager.previewTheme(this.value);
-  });
-}
-
-// Add accent color preview handler
-if (accentColorSelect) {
-  accentColorSelect.addEventListener('change', function() {
-    settingsManager.previewAccentColor(this.value);
-  });
-}
-
-// Add save button handler
-const saveSettingsBtn = document.getElementById('save-settings-btn');
-if (saveSettingsBtn) {
-  saveSettingsBtn.addEventListener('click', () => {
-    const newSettings = {
-      theme: themeSelect ? themeSelect.value : settings.theme,
-      accentColor: accentColorSelect ? accentColorSelect.value : settings.accentColor,
-      notifications: notificationToggle ? notificationToggle.checked : settings.notifications,
-      toastDuration: toastDurationSelect ? parseInt(toastDurationSelect.value) : settings.toastDuration,
-      showTimestamps: timestampToggle ? timestampToggle.checked : settings.showTimestamps,
-      fontSize: fontSizeSelect ? fontSizeSelect.value : settings.fontSize
-    };
-    
-    const success = settingsManager.updateSettings(newSettings);
-    
-    if (success) {
-      showToast('Settings saved successfully', 'success');
-      // Hide the modal
-      if (settingsModal) {
-        settingsModal.style.display = 'none';
-      }
-    } else {
-      showToast('Failed to save settings', 'error');
+    if (!settingsModal) {
+        console.error('Settings modal not found in the DOM');
+        return;
     }
-  });
-}
 
-// Add reset button handler
-const resetSettingsBtn = document.getElementById('reset-settings-btn');
-if (resetSettingsBtn) {
-  resetSettingsBtn.addEventListener('click', () => {
-    settingsManager.resetSettings();
-    
-    // Update form to match reset settings
-    const resetSettings = settingsManager.getSettings();
-    if (themeSelect) themeSelect.value = resetSettings.theme;
-    if (accentColorSelect) accentColorSelect.value = resetSettings.accentColor;
-    if (notificationToggle) notificationToggle.checked = resetSettings.notifications;
-    if (toastDurationSelect) toastDurationSelect.value = resetSettings.toastDuration.toString();
-    if (timestampToggle) timestampToggle.checked = resetSettings.showTimestamps;
-    if (fontSizeSelect) fontSizeSelect.value = resetSettings.fontSize;
-    
-    showToast('Settings reset to defaults', 'info');
-  });
-}
+    // Get current settings
+    const settings = settingsManager.getSettings();
 
-// Add cancel button handler
-const cancelSettingsBtn = document.querySelector('#settings-modal .close-modal');
-if (cancelSettingsBtn) {
-  cancelSettingsBtn.addEventListener('click', () => {
-    settingsManager.cancelPreviews();
-    settingsModal.style.display = 'none';
-  });
-}
+    // Update form to match current settings
+    if (themeSelect) themeSelect.value = settings.theme;
+    if (accentColorSelect) accentColorSelect.value = settings.accentColor;
+    if (notificationToggle) notificationToggle.checked = settings.notifications;
+    if (toastDurationSelect) toastDurationSelect.value = settings.toastDuration.toString();
+    if (timestampToggle) timestampToggle.checked = settings.showTimestamps;
+    if (fontSizeSelect) fontSizeSelect.value = settings.fontSize;
 
-// Update the settings button click handler
-const settingsBtn = document.getElementById('settings-btn');
-if (settingsBtn) {
-  settingsBtn.addEventListener('click', () => {
-    // Update form values to current settings before showing
-    const currentSettings = settingsManager.getSettings();
-    if (themeSelect) themeSelect.value = currentSettings.theme;
-    if (accentColorSelect) accentColorSelect.value = currentSettings.accentColor;
-    if (notificationToggle) notificationToggle.checked = currentSettings.notifications;
-    if (toastDurationSelect) toastDurationSelect.value = currentSettings.toastDuration.toString();
-    if (timestampToggle) timestampToggle.checked = currentSettings.showTimestamps;
-    if (fontSizeSelect) fontSizeSelect.value = currentSettings.fontSize;
-    
-    // Show the modal
-    settingsModal.style.display = 'flex';
-  });
-}
-}
-
-// Function to show toast notifications
-function showToast(message, type = 'info') {
-const toastContainer = document.getElementById('toast-container');
-if (!toastContainer) return;
-
-// Create toast element
-const toast = document.createElement('div');
-toast.classList.add('toast', type);
-
-// Create icon based on toast type
-const icon = document.createElement('i');
-icon.style.marginRight = '8px';
-
-switch(type) {
-  case 'success':
-    icon.className = 'fas fa-check-circle';
-    icon.style.color = 'var(--success)';
-    break;
-  case 'error':
-    icon.className = 'fas fa-exclamation-circle';
-    icon.style.color = 'var(--danger)';
-    break;
-  default:
-    icon.className = 'fas fa-info-circle';
-    icon.style.color = 'var(--accent-primary)';
-}
-
-// Create message text element
-const messageSpan = document.createElement('span');
-messageSpan.textContent = message;
-
-// Add elements to toast
-toast.appendChild(icon);
-toast.appendChild(messageSpan);
-
-// Add to container
-toastContainer.appendChild(toast);
-
-// Use configurable duration or default to 3000ms
-const duration = window.toastDuration || 3000;
-
-// Auto-remove after duration
-setTimeout(() => {
-  toast.style.opacity = '0';
-  toast.style.transform = 'translateX(20px)';
-  setTimeout(() => {
-    if (toast.parentNode === toastContainer) {
-      toastContainer.removeChild(toast);
+    // Add theme select preview handler
+    if (themeSelect) {
+        themeSelect.addEventListener('change', function () {
+            settingsManager.previewTheme(this.value);
+        });
     }
-  }, 300);
-}, duration);
-}
 
-// Export for use in other scripts
-window.settingsManager = settingsManager;
-window.showToast = showToast;
+    // Add accent color preview handler
+    if (accentColorSelect) {
+        accentColorSelect.addEventListener('change', function () {
+            settingsManager.previewAccentColor(this.value);
+        });
+    }
+
+    // Add save button handler
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', () => {
+            const newSettings = {
+                theme: themeSelect ? themeSelect.value : settings.theme,
+                accentColor: accentColorSelect ? accentColorSelect.value : settings.accentColor,
+                notifications: notificationToggle ? notificationToggle.checked : settings.notifications,
+                toastDuration: toastDurationSelect ? parseInt(toastDurationSelect.value) : settings.toastDuration,
+                showTimestamps: timestampToggle ? timestampToggle.checked : settings.showTimestamps,
+                fontSize: fontSizeSelect ? fontSizeSelect.value : settings.fontSize
+            };
+
+            const success = settingsManager.updateSettings(newSettings);
+
+            if (success) {
+                showToast('Settings saved successfully', 'success');
+                // Hide the modal
+                if (settingsModal) {
+                    settingsModal.style.display = 'none';
+                }
+            } else {
+                showToast('Failed to save settings', 'error');
+            }
+        });
+    }
+
+    // Add reset button handler
+    const resetSettingsBtn = document.getElementById('reset-settings-btn');
+    if (resetSettingsBtn) {
+        resetSettingsBtn.addEventListener('click', () => {
+            settingsManager.resetSettings();
+
+            // Update form to match reset settings
+            const resetSettings = settingsManager.getSettings();
+            if (themeSelect) themeSelect.value = resetSettings.theme;
+            if (accentColorSelect) accentColorSelect.value = resetSettings.accentColor;
+            if (notificationToggle) notificationToggle.checked = resetSettings.notifications;
+            if (toastDurationSelect) toastDurationSelect.value = resetSettings.toastDuration.toString();
+            if (timestampToggle) timestampToggle.checked = resetSettings.showTimestamps;
+            if (fontSizeSelect) fontSizeSelect.value = resetSettings.fontSize;
+
+            showToast('Settings reset to defaults', 'info');
+        });
+    }
+
+    // Add cancel button handler
+    const cancelSettingsBtn = document.querySelector('#settings-modal .close-modal');
+    if (cancelSettingsBtn) {
+        cancelSettingsBtn.addEventListener('click', () => {
+            settingsManager.cancelPreviews();
+            settingsModal.style.display = 'none';
+        });
+    }
+
+    // Update the settings button click handler
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            // Update form values to current settings before showing
+            const currentSettings = settingsManager.getSettings();
+            if (themeSelect) themeSelect.value = currentSettings.theme;
+            if (accentColorSelect) accentColorSelect.value = currentSettings.accentColor;
+            if (notificationToggle) notificationToggle.checked = currentSettings.notifications;
+            if (toastDurationSelect) toastDurationSelect.value = currentSettings.toastDuration.toString();
+            if (timestampToggle) timestampToggle.checked = currentSettings.showTimestamps;
+            if (fontSizeSelect) fontSizeSelect.value = currentSettings.fontSize;
+
+            // Show the modal
+            settingsModal.style.display = 'flex';
+        });
+    }
+
+    // Function to hide toast notifications if notificationToggle is on
+    function hideToast() {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+        toastContainer.style.display = 'none';
+    }
+
+    // notificationToggle
+    const notificationToggle = document.getElementById('notification-toggle');
+    if (notificationToggle) {
+        notificationToggle.addEventListener('change', function () {
+            if (this.checked) {
+                // Show toast notifications
+                showToast('Notifications enabled', 'success');
+            } else {
+                // Hide toast notifications
+                hideToast();
+            }
+        });
+    }
+
+    // Function to show toast notifications
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.classList.add('toast', type);
+
+        // Create icon based on toast type
+        const icon = document.createElement('i');
+        icon.style.marginRight = '8px';
+
+        switch (type) {
+            case 'success':
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--success)';
+                break;
+            case 'error':
+                icon.className = 'fas fa-exclamation-circle';
+                icon.style.color = 'var(--danger)';
+                break;
+            default:
+                icon.className = 'fas fa-info-circle';
+                icon.style.color = 'var(--accent-primary)';
+        }
+
+        // Create message text element
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+
+        // Add elements to toast
+        toast.appendChild(icon);
+        toast.appendChild(messageSpan);
+
+        // Add to container
+        toastContainer.appendChild(toast);
+
+        // Use configurable duration or default to 3000ms
+        const duration = window.toastDuration || 3000;
+
+        // Auto-remove after duration
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(20px)';
+            setTimeout(() => {
+                if (toast.parentNode === toastContainer) {
+                    toastContainer.removeChild(toast);
+                }
+            }, 300);
+        }, duration);
+    }
+
+    // Export for use in other scripts
+    window.settingsManager = settingsManager;
+    window.showToast = showToast;
+}

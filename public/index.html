@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vincio Chat Room</title>
+    <title>Vincio Chat Room - End-to-End Encrypted</title>
     <!-- Main styles -->
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="./styles/dark.css">
@@ -38,6 +38,71 @@
             right: 1rem !important;
             z-index: 10001 !important;
         }
+
+        /* Encryption indicator styles */
+        .encryption-status {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 8px;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+        }
+
+            .encryption-status i {
+                margin-right: 4px;
+            }
+
+        .encryption-enabled .encryption-status {
+            color: var(--success);
+        }
+
+        .encryption-disabled .encryption-status {
+            color: var(--text-secondary);
+        }
+
+        .encrypted-message {
+            position: relative;
+        }
+
+            .encrypted-message .message:after {
+                position: absolute;
+                bottom: 4px;
+                right: 4px;
+                font-size: 0.7rem;
+                opacity: 0.7;
+            }
+
+        .decryption-failed .message {
+            background-color: rgba(255, 60, 60, 0.1);
+        }
+
+            .decryption-failed .message:after {
+                content: "❌";
+                position: absolute;
+                bottom: 4px;
+                right: 4px;
+                font-size: 0.7rem;
+                opacity: 0.7;
+            }
+
+        /* Encryption info box */
+        .encryption-info-box {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--accent-primary);
+            border-radius: var(--radius-md);
+            padding: 0.8rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+            .encryption-info-box i {
+                font-size: 1.2rem;
+                color: var(--accent-primary);
+            }
     </style>
 
     <script>
@@ -49,19 +114,19 @@
                 if (!modal) return false;
 
                 modal.style.cssText = `
-                            display: flex !important;
-                            position: fixed !important;
-                            top: 0 !important;
-                            left: 0 !important;
-                            right: 0 !important;
-                            bottom: 0 !important;
-                            width: 100% !important;
-                            height: 100% !important;
-                            background-color: rgba(10, 10, 15, 0.85) !important;
-                            z-index: 9999 !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                        `;
+                                display: flex !important;
+                                position: fixed !important;
+                                top: 0 !important;
+                                left: 0 !important;
+                                right: 0 !important;
+                                bottom: 0 !important;
+                                width: 100% !important;
+                                height: 100% !important;
+                                background-color: rgba(10, 10, 15, 0.85) !important;
+                                z-index: 9999 !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                            `;
 
                 return true;
             };
@@ -117,12 +182,21 @@
 
         <!-- Room Selection Screen -->
         <div id="room-selection" class="hidden">
+            <div class="encryption-info-box">
+                <i class="fas fa-shield-alt"></i>
+                <div>
+                    <strong>End-to-End Encryption</strong>
+                    <p>Messages are end-to-end encrypted. Only room members have access, Not even we see them.</p>
+                </div>
+            </div>
             <div class="card">
                 <h3><i class="fas fa-plus-circle"></i> Create a New Room</h3>
                 <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                    Start a new chat room and invite others to chat
+                    Start a new encrypted chat room and invite others to chat securely
                 </p>
-                <button id="create-room-btn" class="primary-btn">Create Room</button>
+                <button id="create-room-btn" class="primary-btn">
+                    <i class="fas fa-lock"></i> Create Room
+                </button>
             </div>
             <div class="card">
                 <h3><i class="fas fa-sign-in-alt"></i> Join Existing Room</h3>
@@ -131,7 +205,10 @@
                 </p>
 
                 <div class="input-group">
-                    <input type="text" id="room-code-input" placeholder="Enter room code" maxlength="24">
+                    <input type="text" id="room-code-input" placeholder="Enter room code" maxlength="255">
+                    <p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+                        <i class="fas fa-info-circle"></i> For encrypted rooms, paste the complete code you received
+                    </p>
                 </div>
                 <button id="join-room-btn" class="primary-btn">Join Room</button>
             </div>
@@ -140,7 +217,13 @@
         <!-- Chat Room Screen -->
         <div id="chat-room" class="hidden">
             <div class="chat-header">
-                <h2>Room: <span id="room-code-display"></span></h2>
+                <h2>
+                    Room: <span id="room-code-display"></span>
+                    <span class="encryption-status">
+                        <i class="fas fa-lock"></i>
+                        <span class="encryption-text">Encrypted</span>
+                    </span>
+                </h2>
                 <div class="chat-controls">
                     <button id="settings-btn" class="icon-btn" title="Settings">
                         <i class="fas fa-cog"></i>
@@ -232,6 +315,10 @@
                             <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
                             <span>When a room is deleted, all messages and information are permanently erased.</span>
                         </li>
+                        <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                            <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                            <span>All messages are end-to-end encrypted by default. The encryption keys never leave your browser.</span>
+                        </li>
                     </ul>
 
                     <h4 style="margin: 1.2rem 0 0.8rem; color: var(--accent-primary);">Terms of Service</h4>
@@ -300,6 +387,31 @@
                 <button class="close-modal">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- Security Settings Section -->
+                <div class="settings-section security">
+                    <h4>Encryption</h4>
+
+                    <!-- Always Enabled Encryption Toggle -->
+                    <div class="settings-option">
+                        <label for="encryption-toggle">End-to-End Encryption</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="encryption-toggle" disabled> <!-- Editing Disabled css -->
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Encryption Information -->
+                    <div class="encryption-info-box">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <p>
+                                Messages are always encrypted between room members. We never see them.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+
                 <!-- Theme Settings -->
                 <div class="settings-section theme">
                     <h4>Appearance</h4>
@@ -309,10 +421,10 @@
                         <label for="theme-select">Theme:</label>
                         <select id="theme-select">
                             <option value="dark">Dark</option>
-                            <option value="light">Light</option>
                             <option value="material">Material</option>
+                            <option value="blackred">Dark Maroon</option>
                             <option value="mint">Mint</option>
-                            <option value="blackred">Midnight Red</option>
+                            <option value="light">Light</option>
                             <option value="matrix">Matrix</option>
                         </select>
                     </div>
@@ -338,9 +450,9 @@
 
                     <!-- Sound Notifications -->
                     <div class="settings-option">
-                        <label for="notification-toggle">Enable toasts</label>
+                        <label for="notification-toggle">Toggle toast notifications</label>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="notification-toggle" checked>
+                            <input type="checkbox" id="notification-toggle" disabled>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -407,7 +519,152 @@
         </div>
     </div>
 
+    <!-- Encryption Info Modal -->
+    <div id="encryption-info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> End-to-End Encryption</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="encryption-info-box" style="margin-bottom: 1.5rem;">
+                    <i class="fas fa-lock"></i>
+                    <div>
+                        <p><strong>This chat is end-to-end encrypted.</strong></p>
+                        <p>When you share the room code, make sure to include the complete code with the encryption key.</p>
+                    </div>
+                </div>
+
+                <h4 style="margin-bottom: 1rem;">How Encryption Works</h4>
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                        <span>Messages are encrypted using AES-256 encryption.</span>
+                    </li>
+                    <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                        <span>The encryption key never leaves your device.</span>
+                    </li>
+                    <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                        <span>The server can only see encrypted data, not the actual message content.</span>
+                    </li>
+                    <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem; margin-top: 0.2rem;"></i>
+                        <span>Even if the server is compromised, your messages cannot be read without the key.</span>
+                    </li>
+                </ul>
+
+                <div style="margin-top: 1.5rem; padding: 1rem; background-color: var(--bg-tertiary); border-radius: var(--radius-md);">
+                    <p style="margin-bottom: 0.5rem;"><strong>Security Note:</strong></p>
+                    <p>If you don't share the complete room code with the encryption key, other users won't be able to decrypt your messages.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn" id="close-encryption-info-btn">Got it</button>
+            </div>
+        </div>
+    </div>
+
     <script src="settings.js"></script>
     <script src="app.js"></script>
+
+    <!-- Additional script to handle the encryption settings -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get the encryption toggle
+            const encryptionToggle = document.getElementById('encryption-toggle');
+
+            // Handle encryption toggle
+            if (encryptionToggle) {
+                encryptionToggle.addEventListener('change', function () {
+                    if (window.state) {
+                        window.state.encryptionEnabled = this.checked;
+
+                        // Update UI to show encryption status
+                        updateEncryptionStatusUI(this.checked);
+
+                        // Show toast notification
+                        if (this.checked) {
+                            showToast('End-to-end encryption enabled', 'success');
+                        } else {
+                            showToast('End-to-end encryption disabled', 'warning');
+                        }
+                    }
+                });
+            }
+
+            // Update the encryption status UI
+            function updateEncryptionStatusUI(isEnabled) {
+                const chatRoom = document.getElementById('chat-room');
+                const statusText = document.querySelector('.encryption-status .encryption-text');
+                const statusIcon = document.querySelector('.encryption-status i');
+
+                if (chatRoom && statusText && statusIcon) {
+                    if (isEnabled) {
+                        chatRoom.classList.add('encryption-enabled');
+                        chatRoom.classList.remove('encryption-disabled');
+                        statusText.textContent = 'Encrypted';
+                        statusIcon.className = 'fas fa-lock';
+                    } else {
+                        chatRoom.classList.remove('encryption-enabled');
+                        chatRoom.classList.add('encryption-disabled');
+                        statusText.textContent = 'Not Encrypted';
+                        statusIcon.className = 'fas fa-unlock';
+                    }
+                }
+            }
+
+            // Add click listener to encryption status to show info modal
+            const encryptionStatus = document.querySelector('.encryption-status');
+            if (encryptionStatus) {
+                encryptionStatus.addEventListener('click', function () {
+                    const encryptionInfoModal = document.getElementById('encryption-info-modal');
+                    if (encryptionInfoModal) {
+                        encryptionInfoModal.style.display = 'flex';
+                    }
+                });
+            }
+
+            // Add close button listener for encryption info modal
+            const closeEncryptionInfoBtn = document.getElementById('close-encryption-info-btn');
+            if (closeEncryptionInfoBtn) {
+                closeEncryptionInfoBtn.addEventListener('click', function () {
+                    const encryptionInfoModal = document.getElementById('encryption-info-modal');
+                    if (encryptionInfoModal) {
+                        encryptionInfoModal.style.display = 'none';
+                    }
+                });
+            }
+
+            // Initialize encryption settings and update UI on room join
+            if (window.state) {
+                // Initialize encryption enabled by default
+                window.state.encryptionEnabled = true;
+
+                // Set the toggle to match the state
+                if (encryptionToggle) {
+                    encryptionToggle.checked = window.state.encryptionEnabled;
+                }
+
+                // Update UI
+                updateEncryptionStatusUI(window.state.encryptionEnabled);
+            }
+
+            // Setup socket event handler to update encryption status on room join
+            if (window.socket) {
+                window.socket.on('roomJoined', function (data) {
+                    // Update encryption toggle to match room settings
+                    if (encryptionToggle && data.encryptionEnabled !== undefined) {
+                        encryptionToggle.checked = data.encryptionEnabled;
+                        if (window.state) {
+                            window.state.encryptionEnabled = data.encryptionEnabled;
+                        }
+                        updateEncryptionStatusUI(data.encryptionEnabled);
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

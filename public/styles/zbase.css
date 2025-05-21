@@ -101,6 +101,6 @@
     position: static !important;
     /* Block risky CSS properties */
     behavior: none !important;
-    -moz-binding: none !important;
+    --moz-binding: none !important;
     --binding: none !important;
   }
