@@ -36,6 +36,9 @@
 .settings-section.messages h4::before {
   content: '\f4ad'; /* comment icon */
 }
+.settings-section.security h4::before {
+  content: '\f023'; /* lock icon */
+}
 
 .settings-option {
   display: flex;
