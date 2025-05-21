@@ -868,7 +868,7 @@ li.system-message {
 
         #user-list li.owner {
             border-left: 3px solid var(--accent-primary);
-            background-color: var(--bg-secondary);
+            background-color: #ffffff08;
             font-weight: 500;
         }
 
