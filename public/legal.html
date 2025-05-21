@@ -21,7 +21,7 @@
                     <i class="fas fa-shield-alt"></i>
                     Vincio Chat Legal Information
                 </h1>
-                <p class="header-subtitle">Privacy-focused, ephemeral chat with minimal data retention</p>
+                <p class="header-subtitle">Privacy-focused, ephemeral chat with zero data retention</p>
             </div>
         </header>
 
@@ -30,6 +30,7 @@
                 <div class="nav-title">On this page</div>
                 <ul>
                     <li><a href="#privacy" class="nav-link"><i class="fas fa-user-shield"></i> Privacy & Data Handling</a></li>
+                    <li><a href="#encryption" class="nav-link"><i class="fas fa-lock"></i> End-to-End Encryption</a></li>
                     <li><a href="#analytics" class="nav-link"><i class="fas fa-chart-simple"></i> Analytics</a></li>
                     <li><a href="#hosting" class="nav-link"><i class="fas fa-server"></i> Hosting Provider</a></li>
                     <li><a href="#terms" class="nav-link"><i class="fas fa-file-contract"></i> Terms of Service</a></li>
@@ -43,42 +44,54 @@
                     <h2><i class="fas fa-user-shield"></i> Privacy & Data Handling</h2>
                     <div class="section-intro">
                         <p>
-                            Vincio Chat is designed for temporary, ephemeral communication with minimal data persistence. All conversations exist only in memory and are completely deleted when rooms are closed or inactive. We use end to end encryption to ensure that no third parties can access your messages.
+                            Vincio Chat is designed for ephemeral, privacy-first communication. All chat data exists only in server memory and is permanently deleted when rooms close or the server restarts.
                         </p>
                     </div>
 
                     <div class="legal-card">
-                        <h3><i class="fas fa-database"></i> Minimal Data Storage</h3>
+                        <h3><i class="fas fa-database"></i> Zero Data Retention</h3>
                         <p>
-                            Vincio Chat does not retain chat content, messages, or user identities beyond the duration of the session. All chat data exists only temporarily in the server's memory with no persistent storage.
-                        </p>
-                        <p>
-                            We use third-party services for analytics and hosting as detailed below, but have configured these services with privacy as a priority. No personally identifiable information from chat sessions is ever shared with these services.
+                            Vincio Chat does <strong>not</strong> store chat logs, user identities, or message content in any persistent storage. There is no database, no file storage, and no backups. All data is erased immediately when a room is deleted or the server restarts.
                         </p>
                     </div>
 
                     <div class="legal-card">
                         <h3><i class="fas fa-trash-alt"></i> Data Deletion Upon Room Closure</h3>
                         <p>
-                            When a room is deleted, all associated messages and user data are permanently erased and cannot be recovered by any means. All chat rooms are designed to be ephemeral by default.
+                            When a room is deleted or becomes inactive, all associated messages and user data are permanently erased from memory and cannot be recovered.
                         </p>
                     </div>
 
                     <div class="legal-card">
                         <h3><i class="fas fa-clock"></i> Session and Room Lifetime</h3>
                         <p>
-                            A room's lifespan is determined by its users. The room and its messages exist only while users are connected. Rooms are automatically deleted after a period of inactivity, ensuring no residual data remains.
-                        </p>
-                        <p>
-                            We use End to End Encryption aswell as token verification on all communications and data in transit. 
+                            Rooms and messages exist only while users are connected and active. Inactive rooms are automatically deleted after a short period, ensuring no residual data remains.
                         </p>
                     </div>
 
                     <div class="legal-card">
                         <h3><i class="fas fa-user-secret"></i> No User Authentication</h3>
                         <p>
-                            Vincio Chat requires no user accounts, Email, Fingerprint, or Password, or any personally identifiable information. Users are identified solely by temporary session IDs and room codes that exist only in memory.
+                            Vincio Chat does not require user accounts, email, passwords, or any personally identifiable information. Users are identified only by temporary session IDs and room codes, which exist in memory for the duration of the session.
                         </p>
+                    </div>
+                </section>
+
+                <section id="encryption" class="legal-section">
+                    <h2><i class="fas fa-lock"></i> End-to-End Encryption</h2>
+                    <div class="section-intro">
+                        <p>
+                            All messages in Vincio Chat are end-to-end encrypted in your browser using AES-GCM. Encryption keys never leave your device and are never visible to the server.
+                        </p>
+                    </div>
+                    <div class="legal-card">
+                        <h3><i class="fas fa-key"></i> Encryption Details</h3>
+                        <ul class="privacy-list">
+                            <li>Messages are encrypted in the browser before being sent to the server.</li>
+                            <li>The server only relays encrypted data and cannot decrypt message content.</li>
+                            <li>Room codes can include the encryption key for secure sharing with other users.</li>
+                            <li>Even if the server is compromised, your messages cannot be read without the key.</li>
+                        </ul>
                     </div>
                 </section>
 
@@ -86,34 +99,13 @@
                     <h2><i class="fas fa-chart-simple"></i> Analytics</h2>
                     <div class="section-intro">
                         <p>
-                            We use minimal analytics to understand simple usage patterns and improve our service.
+                            Vincio Chat does <strong>not</strong> use any tracking, advertising, or behavioral analytics. No cookies or persistent identifiers are used for analytics or marketing.
                         </p>
                     </div>
-
                     <div class="legal-card">
-                        <h3><i class="fas fa-chart-line"></i> Cloudflare Analytics</h3>
+                        <h3><i class="fas fa-chart-line"></i> Minimal Technical Metrics</h3>
                         <p>
-                            Vincio Chat uses Cloudflare Analytics in its most minimal configuration. This helps us understand basic usage patterns without identifying individual users. The analytics we collect:
-                        </p>
-                        <ul class="privacy-list">
-                            <li>Do not track individual users across sessions</li>
-                            <li>Do not record IP addresses in an identifiable format</li>
-                            <li>Do not use cookies for tracking purposes</li>
-                            <li>Do not record any chat content or message data</li>
-                            <li>Only collect aggregated metrics like page views, and browser types.</li>
-                        </ul>
-                        <p>
-                            These analytics help us improve the stability and performance of our service without compromising privacy.
-                        </p>
-                    </div>
-
-                    <div class="legal-card">
-                        <h3><i class="fas fa-sliders-h"></i> Analytics Controls</h3>
-                        <p>
-                            If you wish to reduce analytics collection further, we recommend using browser privacy extensions that block analytics scripts or using privacy-focused browsers.
-                        </p>
-                        <p>
-                            Cloudflare's privacy policy can be found at <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">https://www.cloudflare.com/privacypolicy/</a>.
+                            We may collect basic, non-identifiable technical metrics (such as aggregate connection counts or error rates) for the sole purpose of monitoring server health and preventing abuse. No chat content, user identities, or IP addresses are stored or analyzed for profiling.
                         </p>
                     </div>
                 </section>
@@ -122,33 +114,11 @@
                     <h2><i class="fas fa-server"></i> Hosting Provider</h2>
                     <div class="section-intro">
                         <p>
-                            Information about our hosting infrastructure and related privacy implications.
+                            Vincio Chat is hosted on privacy-focused cloud infrastructure. The hosting provider may collect standard technical information (such as connection times and browser types) for operational purposes, but has no access to chat content or user identities.
                         </p>
                     </div>
-
-                    <div class="legal-card">
-                        <h3><i class="fas fa-cloud"></i> Render Hosting</h3>
-                        <p>
-                            Vincio Chat is hosted on Render, a privacy-focused cloud hosting provider. Render may collect certain technical information as part of their standard operation, including:
-                        </p>
-                        <ul class="privacy-list">
-                            <li>Browser type and version</li>
-                            <li>Time and date of connections</li>
-                            <li>Technical metrics about server performance</li>
-                        </ul>
-                        <p>
-                            Importantly, Render does not have access to the of the content inside of rooms or user identities beyond temporary connection data required for basic service delivery.
-                        </p>
-                        <p>
-                            Render's privacy policy can be found at <a href="https://render.com/privacy" target="_blank" rel="noopener noreferrer">https://render.com/privacy</a>.
-                        </p>
-                    </div>
-
                     <div class="legal-card">
                         <h3><i class="fas fa-shield-alt"></i> Server Security</h3>
-                        <p>
-                            Our hosting configuration is designed with security as a priority. We implement industry standard security measures including:
-                        </p>
                         <ul class="privacy-list">
                             <li>TLS encryption for all data in transit</li>
                             <li>Regular security updates and patches</li>
@@ -169,10 +139,10 @@
                     <div class="legal-card">
                         <h3><i class="fas fa-info-circle"></i> Service Provisions</h3>
                         <ul class="terms-list">
-                            <li>Vincio Chat is provided "as-is" for personal and experimental use only</li>
-                            <li>This service is not intended for professional production or business use</li>
-                            <li>We do not guarantee the availability or reliability of the service</li>
-                            <li>We reserve the right to suspend or terminate access at any time without notice</li>
+                            <li>Vincio Chat is provided "as-is" for personal and experimental use only.</li>
+                            <li>This service is not intended for professional production or business use.</li>
+                            <li>We do not guarantee the availability or reliability of the service.</li>
+                            <li>We reserve the right to suspend or terminate access at any time without notice.</li>
                         </ul>
                     </div>
 
@@ -211,7 +181,7 @@
                         <p>
                             If you have any questions about our legal information or need assistance, please contact us at:
                         </p>
-                        <a href="mailto:GeneralSupport@vincio.cc" class="contact-email">
+                        <a href="mailto:Support@vincio.cc" class="contact-email">
                             <i class="fas fa-envelope-open-text"></i>
                             Support@vincio.cc
                         </a>
