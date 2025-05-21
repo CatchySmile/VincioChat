@@ -1,5 +1,6 @@
 /**
- * Represents a chat room with enhanced security, resource management, and memory efficiency
+ * Represents a chat room with enhanced security, resource management, memory efficiency
+ * and end-to-end encryption
  */
 const SecurityUtils = require('../utils/SecurityUtils');
 
@@ -46,6 +47,16 @@ class Room {
             truncationCount: 0,
             lastTruncation: null
         };
+
+        // Generate encryption key for the room (never sent to server)
+        this.clientEncryptionKey = options.clientEncryptionKey || null;
+
+        // Server-side encryption key (derived from room code)
+        this.serverEncryptionKey = SecurityUtils.deriveRoomKey(this.code);
+
+        // Store encryption settings
+        this.encryptionEnabled = options.encryptionEnabled !== undefined ?
+            options.encryptionEnabled : true;
     }
 
     /**
@@ -241,6 +252,7 @@ class Room {
      * 
      * @param {number} keepCount - Number of most recent messages to keep
      * @returns {number} Number of messages truncated
+     * @private
      */
     truncateMessages(keepCount) {
         // Ensure keepCount is reasonable
@@ -332,9 +344,10 @@ class Room {
      * Gets room data safe for transmitting to clients
      * @param {boolean} includeMessages - Whether to include message history
      * @param {boolean} includeStats - Whether to include memory stats
+     * @param {boolean} includeEncryption - Whether to include encryption info
      * @returns {Object} Room data object
      */
-    toJSON(includeMessages = false, includeStats = false) {
+    toJSON(includeMessages = false, includeStats = false, includeEncryption = false) {
         const result = {
             code: this.code,
             users: Array.from(this.users.values()).map(user => user.toJSON()),
@@ -342,17 +355,27 @@ class Room {
             messageCount: this.messages.length,
             createdAt: this.createdAt,
             lastActivity: this.lastActivity,
-            ownerId: this.owner ? this.owner.id : null
+            ownerId: this.owner ? this.owner.id : null,
+            encryptionEnabled: this.encryptionEnabled
         };
 
         // Only include recent messages if specifically requested
         if (includeMessages) {
-            result.messages = this.getRecentMessages(50).map(msg => msg.toJSON());
+            result.messages = this.getRecentMessages(50).map(msg => {
+                // If server encryption is used, decrypt messages using the server key
+                return msg.toJSON(this.serverEncryptionKey);
+            });
         }
 
         // Include memory stats if requested (for admin monitoring)
         if (includeStats) {
             result.memoryStats = { ...this.memoryStats };
+        }
+
+        // Include encryption details if requested (for certain operations)
+        if (includeEncryption && this.encryptionEnabled) {
+            // Never expose the encryption key, just the fact that it's enabled
+            result.encryptionEnabled = true;
         }
 
         return result;

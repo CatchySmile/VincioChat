@@ -1,6 +1,6 @@
 /**
- * Manages all chat rooms with enhanced security, privacy, resource controls
- * and memory management optimizations
+ * Manages all chat rooms with enhanced security, privacy, resource controls,
+ * memory management optimizations, and encryption support
  */
 const Room = require('./Room');
 const Message = require('./Message');
@@ -33,7 +33,8 @@ class RoomManager {
             memoryMonitoringInterval: options.memoryMonitoringInterval || (process.env.MEMORY_MONITORING_INTERVAL ?
                 parseInt(process.env.MEMORY_MONITORING_INTERVAL) : 60000), // 1 minute
             memoryWarningThreshold: options.memoryWarningThreshold || (process.env.MEMORY_WARNING_THRESHOLD ?
-                parseInt(process.env.MEMORY_WARNING_THRESHOLD) : 1024) // 1GB in MB
+                parseInt(process.env.MEMORY_WARNING_THRESHOLD) : 1024), // 1GB in MB
+            encryptionEnabled: options.encryptionEnabled || (process.env.SERVER_ENCRYPTION_ENABLED === 'true') // Server-side encryption
         };
 
         // Track room creation by IP hash for rate limiting
@@ -99,11 +100,16 @@ class RoomManager {
             // Create owner as first user with properly sanitized username
             const owner = new User(ownerId, ownerName, ip);
 
+            // Setup encryption by default for new rooms
+            const encryptionEnabled = options.encryptionEnabled !== undefined ?
+                options.encryptionEnabled : this.config.encryptionEnabled;
+
             // Create the room with provided options
             const roomOptions = {
                 maxUsers: options.maxUsers || 50,
                 maxMessages: options.maxMessages || 200,
-                isPrivate: options.isPrivate || false
+                isPrivate: options.isPrivate || false,
+                encryptionEnabled: encryptionEnabled
             };
 
             const room = new Room(roomCode, owner, roomOptions);
@@ -117,8 +123,11 @@ class RoomManager {
             this.memoryStats.userCount += 1;
 
             // Emit event for monitoring
-            this.emit('roomCreated', { roomCode, ownerHash: this.hashIdentifier(ownerId) });
-
+            this.emit('roomCreated', {
+                roomCode,
+                ownerHash: this.hashIdentifier(ownerId),
+                encryptionEnabled: room.encryptionEnabled
+            });
 
             this.logger.info(`Room created: ${roomCode} by ${owner.username} (${this.hashIdentifier(ownerId)})`);
             return room;
@@ -402,14 +411,15 @@ class RoomManager {
     }
 
     /**
-     * Adds a user message to a room with enhanced validation
+     * Adds a user message to a room with enhanced validation and encryption support
      * @param {string} roomCode - Code of the room
      * @param {string} userId - Socket ID of the sender
      * @param {string} text - Message content
+     * @param {Object} options - Additional options (isEncrypted, encryptionMeta)
      * @returns {Message|null} The created message or null if room/user doesn't exist
      * @throws {Error} If message addition fails for a critical reason
      */
-    addMessage(roomCode, userId, text) {
+    addMessage(roomCode, userId, text, options = {}) {
         try {
             const room = this.getRoom(roomCode);
             if (!room) return null;
@@ -420,8 +430,17 @@ class RoomManager {
             // Generate a unique message ID that includes sender ID for traceability
             const messageId = `${userId}-${crypto.randomUUID()}`;
 
-            // Create message with validation
-            const message = new Message(messageId, user.username, text);
+            // Create message with validation and encryption handling
+            const message = new Message(
+                messageId,
+                user.username,
+                text,
+                {
+                    isEncrypted: options.isEncrypted || false,
+                    roomKey: room.serverEncryptionKey,
+                    encryptionMeta: options.encryptionMeta
+                }
+            );
 
             // Add to room with rate limiting
             const added = room.addMessage(message);
@@ -436,11 +455,12 @@ class RoomManager {
             // Update memory stats
             this.memoryStats.messageCount += 1;
 
-            // Emit event for monitoring
+            // Emit event for monitoring (don't log message content)
             this.emit('messageAdded', {
                 roomCode,
                 userHash: this.hashIdentifier(userId),
-                messageCount: room.messages.length
+                messageCount: room.messages.length,
+                encrypted: options.isEncrypted || false
             });
 
             return message;
@@ -449,10 +469,7 @@ class RoomManager {
             return null;
         }
     }
-    /**
- * Improved system message handler for RoomManager.js
- * This function should replace the existing addSystemMessage in RoomManager.js
- */
+
     /**
      * Adds a system message to a room
      * @param {string} roomCode - Code of the room
@@ -895,7 +912,8 @@ class RoomManager {
                 rooms: {
                     total: this.rooms.size,
                     active: 0, // Rooms with activity in last hour
-                    occupancy: {} // Distribution of user counts
+                    occupancy: {}, // Distribution of user counts
+                    encrypted: 0 // Number of rooms with encryption enabled
                 },
                 users: {
                     total: this.memoryStats.userCount,
@@ -905,7 +923,8 @@ class RoomManager {
                 messages: {
                     total: this.memoryStats.messageCount,
                     averagePerRoom: this.rooms.size > 0 ?
-                        this.memoryStats.messageCount / this.rooms.size : 0
+                        this.memoryStats.messageCount / this.rooms.size : 0,
+                    encryptedCount: 0 // Number of encrypted messages
                 },
                 memory: {
                     heapUsedMB: this.memoryStats.memoryUsage,
@@ -924,6 +943,8 @@ class RoomManager {
             const now = Date.now();
             const hourAgo = now - 3600000;
 
+            let encryptedMessageCount = 0;
+
             for (const room of this.rooms.values()) {
                 // Count active rooms (activity in last hour)
                 if (room.lastActivity > hourAgo) {
@@ -934,7 +955,22 @@ class RoomManager {
                 const userCount = room.users.size;
                 metrics.rooms.occupancy[userCount] =
                     (metrics.rooms.occupancy[userCount] || 0) + 1;
+
+                // Track encrypted rooms
+                if (room.encryptionEnabled) {
+                    metrics.rooms.encrypted++;
+                }
+
+                // Count encrypted messages
+                for (const message of room.messages) {
+                    if (message.isEncrypted || message.isServerEncrypted) {
+                        encryptedMessageCount++;
+                    }
+                }
             }
+
+            // Set encrypted message count
+            metrics.messages.encryptedCount = encryptedMessageCount;
 
             return metrics;
         } catch (error) {

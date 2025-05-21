@@ -666,27 +666,6 @@ function bindSettingsFormControls() {
         });
     }
 
-    // Function to hide toast notifications if notificationToggle is on
-    function hideToast() {
-        const toastContainer = document.getElementById('toast-container');
-        if (!toastContainer) return;
-        toastContainer.style.display = 'none';
-    }
-
-    // notificationToggle
-    const notificationToggle = document.getElementById('notification-toggle');
-    if (notificationToggle) {
-        notificationToggle.addEventListener('change', function () {
-            if (this.checked) {
-                // Show toast notifications
-                showToast('Notifications enabled', 'success');
-            } else {
-                // Hide toast notifications
-                hideToast();
-            }
-        });
-    }
-
     // Function to show toast notifications
     function showToast(message, type = 'info') {
         const toastContainer = document.getElementById('toast-container');

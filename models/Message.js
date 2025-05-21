@@ -1,5 +1,5 @@
 /**
- * Represents a chat message with enhanced security and privacy features
+ * Represents a chat message with enhanced security, privacy features and encryption
  */
 const SecurityUtils = require('../utils/SecurityUtils');
 const crypto = require('crypto');
@@ -10,22 +10,44 @@ class Message {
      * @param {string} id - Unique message identifier
      * @param {string} username - Username of the sender (sanitized)
      * @param {string} text - Message content (sanitized)
+     * @param {Object} options - Optional parameters (isEncrypted, roomKey)
      */
-    constructor(id, username, text) {
+    constructor(id, username, text, options = {}) {
         // Generate ID if not provided
         this.id = id || crypto.randomUUID();
 
         // Apply strict sanitization to username
         this.username = SecurityUtils.sanitizeText(username, SecurityUtils.SIZE_LIMITS.USERNAME);
 
-        // Sanitize and validate message text
-        this.text = this.sanitizeAndValidateText(text);
+        // Check if this is an already encrypted message from client
+        this.isClientEncrypted = options.isEncrypted || false;
+
+        // Sanitize and validate message text if not already encrypted
+        if (!this.isClientEncrypted) {
+            this.text = this.sanitizeAndValidateText(text);
+
+            // Encrypt for server-side storage if room key is provided
+            if (options.roomKey) {
+                this.text = SecurityUtils.encryptMessageForStorage(this.text, options.roomKey);
+                this.isServerEncrypted = true;
+            } else {
+                this.isServerEncrypted = false;
+            }
+        } else {
+            // For client-encrypted messages, store as-is (they're already encrypted)
+            this.text = text;
+        }
 
         // Create timestamp (milliseconds for precision)
         this.timestamp = Date.now();
 
         // Flag for system messages - explicitly set for system messages
         this.isSystem = username === 'System';
+
+        // Store metadata about encryption
+        if (options.encryptionMeta) {
+            this.encryptionMeta = options.encryptionMeta;
+        }
     }
 
     /**
@@ -62,6 +84,18 @@ class Message {
     }
 
     /**
+     * Decrypts the message text if it's server-encrypted
+     * @param {string} roomKey - The key to decrypt the message
+     * @returns {string} Decrypted message text
+     */
+    getDecryptedText(roomKey) {
+        if (this.isServerEncrypted && roomKey) {
+            return SecurityUtils.decryptMessageFromStorage(this.text, roomKey);
+        }
+        return this.text;
+    }
+
+    /**
      * Validates if a message text is valid (non-empty and within limits)
      * @param {string} text - Message text to validate
      * @returns {boolean} True if valid, false otherwise
@@ -89,15 +123,24 @@ class Message {
     /**
      * Gets message data safe for transmission
      * Remove any internal properties that shouldn't be exposed
+     * @param {string} roomKey - Optional room key for decryption of server-encrypted messages
      * @returns {Object} Message data object
      */
-    toJSON() {
+    toJSON(roomKey = null) {
+        // Prepare message text - decrypt if server-encrypted
+        let messageText = this.text;
+        if (this.isServerEncrypted && roomKey) {
+            messageText = this.getDecryptedText(roomKey);
+        }
+
         return {
             id: this.id,
             username: this.username,
-            text: this.text,
+            text: messageText,
             timestamp: this.timestamp,
-            isSystem: this.isSystem
+            isSystem: this.isSystem,
+            isEncrypted: this.isClientEncrypted,
+            encryptionMeta: this.encryptionMeta
         };
     }
 }

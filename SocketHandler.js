@@ -1,8 +1,9 @@
 /**
  * Handles all Socket.IO events and communication with enhanced security, error handling,
- * and memory management integration.
+ * memory management integration, and end-to-end encryption support.
  */
 const SecurityUtils = require('./utils/SecurityUtils');
+const Message = require('./models/Message');
 
 class SocketHandler {
     /**
@@ -231,10 +232,10 @@ class SocketHandler {
     }
 
     /**
- * Handles room creation with proper error handling
- * @param {Object} socket - Socket.IO socket instance
- * @param {string} username - Username of the room creator
- */
+     * Handles room creation with proper error handling
+     * @param {Object} socket - Socket.IO socket instance
+     * @param {string} username - Username of the room creator
+     */
     handleCreateRoom(socket, username) {
         try {
             const clientIp = this.getClientIp(socket);
@@ -303,7 +304,6 @@ class SocketHandler {
         }
     }
 
-
     /**
      * Handles joining an existing room with proper error handling
      * @param {Object} socket - Socket.IO socket instance
@@ -366,6 +366,9 @@ class SocketHandler {
                 socket.to(room.code).emit('newMessage', joinMessage); // Send to everyone except the sender
             }
 
+            // Get encryption status from the room
+            const encryptionEnabled = room.encryptionEnabled || false;
+
             // Notify the newest user with a system message of current room occupants
             const occupants = Array.from(room.users.values())
                 .map(user => user.username.slice(0, 10)) // Truncate usernames to 10 characters
@@ -382,7 +385,8 @@ class SocketHandler {
                 messageSizeLimit: SecurityUtils.SIZE_LIMITS.MESSAGE,
                 sessionToken: sessionToken,
                 csrfToken: csrfToken,
-                isRoomOwner: room.isOwner(socket.id)
+                isRoomOwner: room.isOwner(socket.id),
+                encryptionEnabled: encryptionEnabled
             });
 
             // Notify other users in the room about the new user
@@ -398,16 +402,14 @@ class SocketHandler {
         }
     }
 
-
-
     /**
-     * Handles sending a message with proper authentication and error handling
+     * Handles sending a message with proper authentication, error handling and encryption support
      * @param {Object} socket - Socket.IO socket instance
-     * @param {Object} data - Message data (roomCode, message, sessionToken)
+     * @param {Object} data - Message data (roomCode, message, sessionToken, isEncrypted, encryptionMeta)
      */
     handleSendMessage(socket, data) {
         try {
-            const { roomCode, message, sessionToken } = data;
+            const { roomCode, message, sessionToken, isEncrypted, encryptionMeta } = data;
             const clientIp = this.getClientIp(socket);
 
             // Validate session token for authenticated action
@@ -432,13 +434,19 @@ class SocketHandler {
                 return socket.emit('error', 'Invalid room code format');
             }
 
-            if (!SecurityUtils.isValidMessage(message)) {
+            // Skip normal validation for encrypted messages
+            if (!isEncrypted && !SecurityUtils.isValidMessage(message)) {
                 return socket.emit('error', `Invalid message format or empty message`);
             }
 
-            // Check if message exceeds size limit
-            if (message.length > SecurityUtils.SIZE_LIMITS.MESSAGE) {
-                return socket.emit('error', `Message exceeds maximum length of ${SecurityUtils.SIZE_LIMITS.MESSAGE} characters`);
+            // Check if encrypted message size is reasonable
+            const messageSize = typeof message === 'string' ? message.length : (message instanceof Object ? JSON.stringify(message).length : 0);
+
+            // Use a higher limit for encrypted messages since they may be larger
+            const maxSize = isEncrypted ? SecurityUtils.SIZE_LIMITS.MESSAGE * 2 : SecurityUtils.SIZE_LIMITS.MESSAGE;
+
+            if (messageSize > maxSize) {
+                return socket.emit('error', `Message exceeds maximum size limit`);
             }
 
             // Check if user is in this room
@@ -450,14 +458,37 @@ class SocketHandler {
             // Update last activity timestamp for session management
             userData.lastActivity = Date.now();
 
-            // Add the message to the room
-            const messageObj = this.roomManager.addMessage(roomCode, socket.id, message);
-            if (!messageObj) {
+            // Get the room for server-side encryption
+            const room = this.roomManager.getRoom(roomCode);
+            if (!room) {
+                return socket.emit('error', 'Room not found');
+            }
+
+            // Create message with appropriate flags for encryption status
+            const messageObj = new Message(
+                `${socket.id}-${Date.now()}`, // Generate ID
+                userData.username,
+                message,
+                {
+                    isEncrypted, // Indicates client-side encryption
+                    roomKey: room.serverEncryptionKey, // For server-side encryption
+                    encryptionMeta // Additional encryption metadata
+                }
+            );
+
+            // Add to room with rate limiting
+            const added = room.addMessage(messageObj);
+            if (!added) {
                 return socket.emit('error', 'Failed to send message');
             }
 
             // Broadcast sanitized message to all users in the room
-            this.io.to(roomCode).emit('newMessage', messageObj);
+            // (for encrypted messages, we just pass through the encrypted content)
+            this.io.to(roomCode).emit('newMessage', messageObj.toJSON());
+
+            // Log message sending (don't log the actual content)
+            this.logger.info(`Message sent in room ${roomCode} by ${userData.username} (${socket.id})${isEncrypted ? ' [encrypted]' : ''}`);
+
         } catch (error) {
             this.logger.error(`Error sending message: ${error.message}`);
             socket.emit('error', 'Failed to send message. Please try again.');

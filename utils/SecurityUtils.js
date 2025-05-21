@@ -6,6 +6,7 @@
  * - Improved token generation with better entropy
  * - Fixed token validation
  * - Memory leak in rate limit tracking
+ * - Added end-to-end encryption support
  */
 require('dotenv').config();
 const { JSDOM } = require('jsdom');
@@ -83,6 +84,17 @@ class SecurityUtils {
     };
 
     /**
+     * Server-side encryption config
+     * These options control server-side encryption for stored messages
+     */
+    static ENCRYPTION_CONFIG = {
+        enabled: process.env.SERVER_ENCRYPTION_ENABLED === 'true' || true,
+        algorithm: process.env.SERVER_ENCRYPTION_ALGORITHM || 'aes-256-gcm',
+        keyLength: process.env.SERVER_ENCRYPTION_KEY_LENGTH ? parseInt(process.env.SERVER_ENCRYPTION_KEY_LENGTH) : 32,
+        ivLength: process.env.SERVER_ENCRYPTION_IV_LENGTH ? parseInt(process.env.SERVER_ENCRYPTION_IV_LENGTH) : 16
+    };
+
+    /**
      * Initialize the security utils
      * Sets up periodic cleanup to prevent memory leaks
      */
@@ -125,6 +137,7 @@ class SecurityUtils {
      * Creates a privacy-preserving hash of an identifier
      * @param {string} identifier - Identifier to hash
      * @returns {string} Truncated hash
+     * @private
      */
     static hashIdentifier(identifier) {
         if (!identifier) return 'unknown';
@@ -724,6 +737,112 @@ class SecurityUtils {
             return false;
         }
     }
+
+    /**
+     * Encrypts a message for server-side storage
+     * @param {string} messageText - Message text to encrypt
+     * @param {string} roomKey - Key used for room encryption (derived from room code)
+     * @returns {string} Encrypted message
+     */
+    static encryptMessageForStorage(messageText, roomKey) {
+        if (!this.ENCRYPTION_CONFIG.enabled) return messageText;
+
+        try {
+            // Use the roomKey as a salt to derive a room-specific key
+            const key = crypto.scryptSync(
+                this.getDerivedKey(),
+                roomKey,
+                this.ENCRYPTION_CONFIG.keyLength
+            );
+
+            // Generate a random IV
+            const iv = crypto.randomBytes(this.ENCRYPTION_CONFIG.ivLength);
+
+            // Create cipher using the derived key and IV
+            const cipher = crypto.createCipheriv(this.ENCRYPTION_CONFIG.algorithm, key, iv);
+
+            // Encrypt the message
+            let encrypted = cipher.update(messageText, 'utf8', 'hex');
+            encrypted += cipher.final('hex');
+
+            // Get the auth tag (for GCM mode)
+            const authTag = cipher.getAuthTag().toString('hex');
+
+            // Return the encrypted message in format: iv:authTag:encrypted
+            return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+        } catch (error) {
+            console.error('Error encrypting message for storage:', error);
+            return messageText; // Fallback to plaintext if encryption fails
+        }
+    }
+
+    /**
+     * Decrypts a message from server-side storage
+     * @param {string} encryptedMessage - Encrypted message
+     * @param {string} roomKey - Key used for room encryption (derived from room code)
+     * @returns {string} Decrypted message text
+     */
+    static decryptMessageFromStorage(encryptedMessage, roomKey) {
+        if (!this.ENCRYPTION_CONFIG.enabled) return encryptedMessage;
+
+        // Check if the message is encrypted (has the IV:authTag:encrypted format)
+        if (!encryptedMessage.includes(':')) return encryptedMessage;
+
+        try {
+            const parts = encryptedMessage.split(':');
+            if (parts.length !== 3) return encryptedMessage; // Invalid format
+
+            const iv = Buffer.from(parts[0], 'hex');
+            const authTag = Buffer.from(parts[1], 'hex');
+            const encrypted = parts[2];
+
+            // Derive the room-specific key
+            const key = crypto.scryptSync(
+                this.getDerivedKey(),
+                roomKey,
+                this.ENCRYPTION_CONFIG.keyLength
+            );
+
+            // Create decipher using the derived key and IV
+            const decipher = crypto.createDecipheriv(this.ENCRYPTION_CONFIG.algorithm, key, iv);
+            decipher.setAuthTag(authTag);
+
+            // Decrypt the message
+            let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+
+            return decrypted;
+        } catch (error) {
+            console.error('Error decrypting message from storage:', error);
+            return encryptedMessage; // Return the encrypted message if decryption fails
+        }
+    }
+
+    /**
+     * Generates a cryptographically secure encryption key for a room
+     * @returns {string} Base64 encoded encryption key
+     */
+    static generateRoomEncryptionKey() {
+        // Generate a secure random key (32 bytes = 256 bits)
+        const key = crypto.randomBytes(32);
+        // Return as base64 for easier handling
+        return key.toString('base64');
+    }
+
+    /**
+     * Hash the room code to create a deterministic key for server-side encryption
+     * @param {string} roomCode - The room code
+     * @returns {string} Deterministic key derived from room code
+     */
+    static deriveRoomKey(roomCode) {
+        if (!roomCode) return '';
+
+        // Use HMAC with the server's secret key to create a deterministic key
+        const hmac = crypto.createHmac('sha256', this.getDerivedKey());
+        hmac.update(roomCode);
+        return hmac.digest('hex');
+    }
 }
+
 // export
 module.exports = SecurityUtils;

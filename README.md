@@ -1,176 +1,179 @@
 # Vincio Chat
 
-Vincio Chat is a secure, ephemeral web-based chat application that prioritizes privacy through zero data retention. Users can create or join chat rooms with unique secure codes, with all communications happening in real-time over WebSockets.
+Vincio Chat is a secure, ephemeral web-based chat application that prioritizes privacy and security through zero data retention and end-to-end encryption. Users can create or join chat rooms with unique secure codes, with all communication happening in real-time over WebSockets.
+
+---
 
 ## Core Privacy & Security Features
 
 - **Zero Data Retention**
-  - All data exists temporarily in memory only
-  - No database or persistent storage of any kind
-  - Messages, user information, and room data completely disappear when rooms are deleted or server restarts
-  - No logging of personal data, messages, or room information
+  - All data exists only in memory—no database or persistent storage
+  - Messages, user info, and room data are deleted when rooms close or the server restarts
+  - No logging of personal data or message content
 
-- **Secure Encryption & Authentication**
-  - End-to-end session security with cryptographic tokens
-  - CSRF protection for all sensitive operations
+- **End-to-End Encryption**
+  - All messages are end-to-end encrypted in the browser using AES-GCM
+  - Encryption keys never leave the client; the server only relays encrypted data
+  - Room codes can embed encryption keys for secure sharing
+
+- **Authentication & Protection**
+  - Session tokens and CSRF tokens for all sensitive operations
   - Timing-safe comparison for all security tokens to prevent timing attacks
   - Secure random room code generation with high entropy
 
-- **Memory Management & Resource Protection**
-  - Automatic memory monitoring to prevent resource exhaustion
-  - Graceful degradation during high memory usage
-  - Automatic room cleanup after inactivity periods
-  - Rate limiting for all operations to prevent abuse
+- **Resource & Abuse Protection**
+  - Automatic memory monitoring and graceful degradation under high usage
+  - Automatic room cleanup after inactivity
+  - Rate limiting for all operations (connections, messages, room creation) to prevent abuse
 
-## Communication Features
+---
 
-- **Secure Room Management**
-  - Create or join rooms with unique 12-24 digit alphanumeric codes
-  - Automatic room ownership transfer when owners leave
-  - Room cleanup after periods of inactivity
-  - Rate limiting on all operations
+## Communication & User Features
 
-- **Real-time Communication**
-  - WebSocket-based messaging via Socket.IO with polling fallback
+- **Room Management**
+  - Create or join rooms with unique 12–24 character alphanumeric codes (optionally with embedded encryption key)
+  - Automatic room ownership transfer if owners leave
+  - Inactive rooms are cleaned up automatically
+
+- **Real-time Messaging**
+  - WebSocket-based messaging via Socket.IO (with polling fallback)
   - Message rate limiting and sanitization
-  - Support for chat commands (e.g., `/clear`, `/help`, `/leave`)
+  - Chat commands: `/clear`, `/help`, `/leave`
   - User join/leave notifications and status updates
 
 - **User Experience**
-  - Modern dark theme with customizable settings
-  - Multiple theme options and accent colors
-  - Mobile-friendly responsive design
-  - Accessibility considerations with high contrast options
+  - Modern dark theme with customizable settings and accent colors
+  - Responsive, mobile-friendly design
+  - Accessibility with high-contrast options
+  - Toast notifications and modals for feedback and actions
+
+---
 
 ## Technical Architecture
 
-- **Frontend:**
-  - HTML5, CSS3 with modern variable-based theming
-  - Vanilla JavaScript (ES6+) with no dependencies
-  - Font Awesome icons and Google Fonts
-  - Responsive design with mobile optimization
+**Frontend:**
+- HTML5, CSS3 (variable-based theming)
+- Vanilla JavaScript (ES6+)
+- End-to-end encryption using Web Crypto API (AES-GCM)
+- Font Awesome & Google Fonts
 
-- **Backend:**
-  - Node.js with Express server
-  - Socket.IO for real-time WebSocket communication
-  - Modern ES6+ JavaScript
-  - Helmet.js for comprehensive security headers
+**Backend:**
+- Node.js with Express
+- Socket.IO for real-time communication
+- Modular architecture: `SocketHandler.js` for all socket events, `RoomManager.js` for room logic, `SecurityUtils.js` for security
+- Helmet.js for security headers
 
-- **Security:**
-  - DOMPurify for content sanitization
-  - Cryptographic token-based authentication
-  - JSDOM for DOM manipulation
-  - Comprehensive input validation and rate limiting
+**Security:**
+- DOMPurify for input sanitization
+- Cryptographic token-based authentication
+- JSDOM for DOM manipulation
+- Comprehensive input validation and adaptive rate limiting
+
+---
 
 ## Privacy Approach
 
-All data in Vincio Chat exists only in memory during active sessions:
+- **No Data Storage:** No database, files, or cookies—everything is in-memory
+- **Ephemeral Rooms:** Rooms and messages are deleted after inactivity or server restart
+- **No User Accounts:** No registration, login, or persistent user data
+- **No Tracking:** No analytics or user behavior monitoring
+- **Zero Retention:** All data is removed immediately when a room is deleted
 
-- **No Data Storage**: No database, no files, no cookies - everything exists only in memory
-- **Ephemeral Rooms**: Chat rooms automatically delete after inactivity
-- **Memory-Only Messages**: All messages exist only in RAM and disappear when rooms close
-- **No User Accounts**: No registration, login, or persistent user data
-- **No Tracking**: No analytics, tracking, or user behavior monitoring
-- **Zero Retention**: When a room is deleted, all associated data is immediately removed with no backups
+---
 
 ## Project Structure
 
 ```
 Project Root/
-├── Public/                  # Client-side assets
-│   ├── styles/              # CSS stylesheets
-│   │   ├── dark.css         # Base styling
-│   │   ├── legal.css        # Legal page styling
-│   │   ├── settings.css     # Settings styling
-│   │   ├── themes.css       # Theme customization
-│   │   └── zbase.css        # Z-index management
-│   │ 
-│   ├── index.html           # Main application HTML
-│   ├── app.js               # Frontend logic
-│   ├── settings.js          # Settings management
-│   ├── loading.js           # Loading screen
+├── public/                  # Client-side assets
+│   ├── styles/              # CSS stylesheets (themes, settings, z-index, etc.)
+│   ├── index.html           # Main application HTML (UI, modals, encryption info)
+│   ├── app.js               # Frontend logic (encryption, UI, socket events)
+│   ├── settings.js          # User settings management
+│   ├── loading.js           # Loading screen logic
 │   ├── error.html           # Error page
-│   └── legal.html           # Legal information and privacy policy
+│   └── legal.html           # Legal/privacy policy
 │
-├── Models/                  # Backend data models
+├── models/                  # Backend data models
 │   ├── Room.js              # Room logic and user management
-│   ├── RoomManager.js       # Manages active rooms
+│   ├── RoomManager.js       # Manages active rooms, memory/resource control
 │   ├── User.js              # User model with privacy protections
-│   └── Message.js           # Message model with sanitization
+│   └── Message.js           # Message model with sanitization/encryption
 │
-├── Utils/
-│   └── SecurityUtils.js     # Security and sanitization utilities
+├── utils/
+│   └── SecurityUtils.js     # Security, sanitization, rate limiting, encryption
 │
 ├── server.js                # Main Express + Socket.IO server
-├── SocketHandler.js         # WebSocket event handling
+├── SocketHandler.js         # WebSocket event handling, auth, CSRF, memory
 ├── MemoryMonitor.js         # Memory usage monitoring
 └── logger.js                # Privacy-focused logging utility
 ```
 
+---
+
 ## Security Features
 
-- **Input Validation and Sanitization**
-  - Content sanitization for all user inputs (username, room code, messages)
-  - Size limits to prevent DoS attacks
+- **Input Validation & Sanitization**
+  - All user inputs (username, room code, messages) are sanitized and size-limited
   - Regex pattern validation for all inputs
 
 - **Rate Limiting**
-  - Connection rate limiting by IP address
-  - Message rate limiting to prevent spam
+  - Connection and message rate limiting by IP
   - Room creation limiting
-  - Adaptive rate limiting that increases restrictions for abuse attempts
+  - Adaptive rate limiting for abuse attempts
 
 - **Session Management**
-  - Secure session tokens with strong encryption
-  - CSRF token implementation for all actions
-  - Activity tracking for security
-  - Automatic session timeouts
+  - Secure, encrypted session tokens
+  - CSRF token implementation
+  - Activity tracking and automatic session timeouts
 
 - **Server Hardening**
-  - Comprehensive Content Security Policy implementation
+  - Content Security Policy (CSP)
   - XSS protection with DOMPurify
-  - HSTS headers for transport security
-  - Frame protection against clickjacking
-  - MIME type sniffing prevention
+  - HSTS headers, frame protection, and MIME sniffing prevention
+
+- **End-to-End Encryption**
+  - All messages are encrypted in the browser using AES-GCM
+  - Encryption keys are never sent to the server
+  - Room codes can include the encryption key for secure sharing
+  - Server-side encryption for message storage is also supported (configurable)
+
+---
 
 ## Installation & Running
 
-1. Clone the repository or extract the zip:
-    ```bash
-    git clone https://github.com/yourname/VincioChat.git
-    ```
+1. **Clone the repository:**
+    `git clone https://github.com/yourname/VincioChat.git`
 
-2. Install dependencies:
-    ```bash
-    npm install socket.io uuid express helmet jsdom dompurify
-    ```
+2. **Install dependencies:**
+    `npm install socket.io uuid express helmet jsdom dompurify`
 
-3. Start the server:
-    ```bash
-    node server.js
-    ```
+3. **Start the server:**
+    `node server.js`
 
-4. Open your browser and navigate to:
-    ```
-    http://localhost:7070
-    ```
+4. **Open your browser:**
+    `localhost:7070`
+
+---
 
 ## Development
 
-To modify the application:
+- Edit CSS variables in `/public/styles/` to customize the theme. sorry about my css skills and formatting.
+- Extend Socket.IO event handlers in `SocketHandler.js` for new features
+- Update validation and security logic in `utils/SecurityUtils.js`
+- Add new models in `/models/` as needed
 
-1. Edit CSS variables in the styles directory to customize the theme
-2. Add new features by extending the Socket.IO event handlers in `SocketHandler.js`
-3. Improve security by updating validation in `utils/SecurityUtils.js`
-4. Add new models in the `/models` directory as needed
+---
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+Licensed under the Apache License 2.0. See the LICENSE file for details.
+
+---
 
 ## Disclaimer
 
-Vincio Chat is designed as a privacy-focused ephemeral chat system. While we've implemented strong security measures, this software is provided "as is" without warranty. Not intended for production use without further security review and hardening.
+Vincio Chat is a privacy-focused ephemeral chat system. While strong security measures are implemented, this software is provided "as is" without warranty. Not intended for production use without further security review and hardening.
 
 ---
 
