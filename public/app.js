@@ -751,11 +751,34 @@ socket.on('roomJoined', ({ roomCode, users, messages, sessionToken, csrfToken, i
 
     addSystemMessage(`Welcome to ${roomCode}! Current occupants: ${users.filter(user => user !== state.username).join(', ')}`);
 
-    // Show encryption status
+    // Show encryption status and update UI
     if (state.encryptionEnabled && state.encryptionKey) {
         addSystemMessage(`End-to-end encryption is enabled in this room.`);
+        // Edit the Encryption text next to room code to indicate encryption is enabled
+        const encryptionText = document.querySelector('.encryption-text');
+        if (encryptionText) {
+            encryptionText.textContent = 'Encrypted';
+            encryptionText.classList.remove('disabled');
+            // change icon
+            const icon = encryptionText.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-lock-open');
+                icon.classList.add('fa-lock');
+            }
+        }
     } else if (!state.encryptionKey) {
         addSystemMessage(`Warning: Messages in this room are not end-to-end encrypted.`);
+        const encryptionText = document.querySelector('.encryption-text');
+        if (encryptionText) {
+            encryptionText.textContent = 'Insecure';
+            encryptionText.classList.add('disabled');
+            // change icon
+            const icon = encryptionText.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-lock');
+                icon.classList.add('fa-lock-open');
+            }
+        }
     }
 
     // Update users list
@@ -967,11 +990,19 @@ function addMessage(message) {
     // Add encryption indicator to username if the message is encrypted
     if (message.isEncrypted) {
         const encryptionIndicator = document.createElement('span');
-        encryptionIndicator.textContent = '  ⧉';
+        encryptionIndicator.textContent = '  [⧉]';
         encryptionIndicator.title = 'This message is encrypted';
         encryptionIndicator.style.fontSize = '0.8em';
         usernameElement.appendChild(encryptionIndicator);
     }
+    if (!message.isEncrypted) {
+        const decryptionFailedIndicator = document.createElement('span');
+        decryptionFailedIndicator.textContent = '  [🛇]';
+        decryptionFailedIndicator.title = 'Decryption failed';
+        decryptionFailedIndicator.style.fontSize = '0.8em';
+        usernameElement.appendChild(decryptionFailedIndicator);
+    }
+
     messageElement.appendChild(usernameElement);
 
     // Message text

@@ -324,3 +324,38 @@ select:focus {
   outline: 3px solid var(--accent-primary);
   outline-offset: 3px;
 }
+
+/*Theme: Saturn (Black & Cyan)*/
+:root.saturn-theme {
+    --bg-primary: #000000;
+    --bg-secondary: #0d0d0d;
+    --bg-tertiary: #1a1a1a;
+    --text-primary: #00ffff;
+    --text-secondary: #00cccc;
+    --input-bg: #0d0d0d;
+    --border-color: #003333;
+    --shadow-color: rgba(0, 255, 255, 0.2);
+    --shadow-light: rgba(0, 255, 255, 0.1);
+    --modal-overlay: rgba(0, 0, 0, 0.85);
+}
+    :root.saturn-theme body {
+        background-color: var(--bg-primary);
+        background-image: radial-gradient(circle at 15% 95%, rgba(0, 255, 255, 0.06) 0%, transparent 20%), radial-gradient(circle at 85% 5%, rgba(9, 255, 255, 0.06) 0%, transparent 25%);
+    }
+    :root.saturn-theme .message {
+        background-color: #1a1a1a;
+        box-shadow: 0 1px 3px rgba(0, 255, 255, 0.05);
+    }
+    :root.saturn-theme .system-message {
+        background-color: rgba(0, 255, 255, 0.07);
+    }
+    :root.saturn-theme .modal-header,
+    :root.saturn-theme .modal-footer {
+        background-color: #1a1a1a;
+    }
+    :root.saturn-theme #user-list li {
+        background-color: #1a1a1a;
+    }
+    :root.saturn-theme *::-webkit-scrollbar-thumb {
+        background-color: #00cccc;
+    }

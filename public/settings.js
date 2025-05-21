@@ -7,7 +7,7 @@
 const SETTINGS_SCHEMA = {
   theme: {
     type: 'string',
-    allowed: ['dark', 'light', 'material', 'mint', 'blackred', 'matrix'],
+    allowed: ['dark', 'light', 'material', 'mint', 'blackred', 'matrix', 'saturn'],
     default: 'dark',
     validate: value => SETTINGS_SCHEMA.theme.allowed.includes(value)
   },
@@ -113,6 +113,15 @@ class SettingsManager {
     
     // Apply the preview theme
     this._applyTheme(theme);
+      // If click outside the modal, cancel preview
+      const settingsModal = document.getElementById('settings-modal');
+      if (settingsModal) {
+          settingsModal.addEventListener('click', (event) => {
+              if (event.target === settingsModal) {
+                  this.cancelPreviews();
+              }
+          });
+      }
   }
 
   /**
@@ -132,6 +141,15 @@ class SettingsManager {
     
     // Apply the preview color
     this._applyAccentColor(color);
+      // If click outside the modal, cancel preview
+      const settingsModal = document.getElementById('settings-modal');
+      if (settingsModal) {
+          settingsModal.addEventListener('click', (event) => {
+              if (event.target === settingsModal) {
+                  this.cancelPreviews();
+              }
+          });
+      }
   }
 
   /**
