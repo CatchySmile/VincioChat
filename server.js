@@ -27,7 +27,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.ALLOWED_ORIGINS || "https://vincio.cc",
+        origin: process.env.ALLOWED_ORIGINS?.split(',') || false,
         methods: ["GET", "POST", "OPTIONS"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"]
@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
 });
 
 app.get('/socket.io/socket.io.js', (req, res) => {
-    res.sendFile(require.resolve('socket.io/client-dist/socket.io.js'));
+    res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
 });
 
 // Add more comprehensive security middleware with Helmet
@@ -267,10 +267,9 @@ app.get('/health', (req, res) => {
 
     res.status(isMemoryHealthy ? 200 : 503).json(health);
 });
-
-// Ensure socket.io is served from the correct path
-app.get('/socket.io/socket.io.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
+// Serve the main HTML file
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 // Handle all other routes to prevent path traversal

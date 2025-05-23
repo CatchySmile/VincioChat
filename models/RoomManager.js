@@ -133,7 +133,7 @@ class RoomManager {
             return room;
         } catch (error) {
             this.logger.error(`Failed to create room: ${error.message}`);
-            throw new Error(`Room creation failed: ${error.message}`);
+            throw new Error(`Room creation failed: ${error.message}`); 
         }
     }
 
