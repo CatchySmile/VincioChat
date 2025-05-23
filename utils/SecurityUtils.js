@@ -218,6 +218,12 @@ class SecurityUtils {
      * @param {string} action - Action type (messages, connections, rooms)
      * @returns {boolean} True if rate limited, false otherwise
      */
+/**
+ * Fixed rate limiting implementation that checks limits before incrementing counters
+ * @param {string} ip - IP address of the client
+ * @param {string} action - Action type (messages, connections, rooms)
+ * @returns {boolean} True if rate limited, false otherwise
+ */
     static isRateLimited(ip, action) {
         const now = Date.now();
         const key = `${ip}:${action}`;
@@ -235,7 +241,7 @@ class SecurityUtils {
                 violations: 0,
                 lastViolation: 0,
                 burstRemaining: actionConfig.burst,
-                timeoutId: null // Track timeouts for cleanup
+                timeoutId: null
             });
         }
 
@@ -260,19 +266,16 @@ class SecurityUtils {
             effectiveLimit = Math.max(5, Math.floor(effectiveLimit / (1 + limit.violations * 0.5)));
         }
 
-        // Check if burst limit available
-        let isBurstUsed = false;
-        if (limit.count >= effectiveLimit && limit.burstRemaining > 0) {
-            limit.burstRemaining--;
-            isBurstUsed = true;
-        }
-
-        // Check if limit exceeded BEFORE incrementing counter
-        const isLimited = limit.count >= effectiveLimit && !isBurstUsed;
-
-        // Track violations for adaptive rate limiting
-        if (isLimited) {
-            limit.violations += 0.5; // Increment violations by 0.5 for smoother penalty scaling
+        // FIXED: Check if this request would exceed the limit
+        const wouldExceedNormalLimit = limit.count >= effectiveLimit;
+        const canUseBurst = limit.burstRemaining > 0;
+        
+        // Allow request if under normal limit OR burst is available
+        const isAllowed = !wouldExceedNormalLimit || canUseBurst;
+        
+        if (!isAllowed) {
+            // RATE LIMITED - track violation but don't consume resources
+            limit.violations += 0.5;
             limit.lastViolation = now;
 
             // Set a timeout to clear violation history
@@ -291,8 +294,11 @@ class SecurityUtils {
             return true; // Rate limited
         }
 
-        // Increment counter AFTER checking the limit
+        // ALLOWED - increment counter and consume burst if needed
         limit.count++;
+        if (wouldExceedNormalLimit && canUseBurst) {
+            limit.burstRemaining--;
+        }
 
         return false; // Not rate limited
     }
@@ -300,13 +306,18 @@ class SecurityUtils {
     /**
      * Cleans up expired rate limit entries to prevent memory leaks
      */
+
     static cleanupRateLimits() {
         const now = Date.now();
         const deleted = [];
 
         for (const [key, limit] of this.rateLimits.entries()) {
-            // Remove entries that have expired and have no violations
-            if (now >= limit.reset && limit.violations <= 0.1) {
+            // More aggressive cleanup - remove if expired OR very old violations
+            const isExpired = now >= limit.reset;
+            const hasOldViolations = limit.violations <= 0.1;
+            const isVeryOld = limit.lastViolation > 0 && (now - limit.lastViolation) > 7200000; // 2 hours
+            
+            if (isExpired && (hasOldViolations || isVeryOld)) {
                 // Clear any pending timeouts to prevent memory leaks
                 if (limit.timeoutId) {
                     clearTimeout(limit.timeoutId);
@@ -317,6 +328,11 @@ class SecurityUtils {
 
         // Delete outside of iteration to avoid modifying during iteration
         deleted.forEach(key => this.rateLimits.delete(key));
+        
+        // Log cleanup stats if significant
+        if (deleted.length > 0) {
+            console.log(`Cleaned up ${deleted.length} expired rate limit entries`);
+        }
     }
 
     /**
